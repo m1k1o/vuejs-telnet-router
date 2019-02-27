@@ -16,7 +16,7 @@
         body {
             background: #222;
             color: #CCC;
-            font-family: Consolas, monospace;
+            font-family: "Consolas", monospace;
         }
         .terminal {
             max-height:100%;
@@ -41,6 +41,7 @@
     <div id="app" class="container-fluid py-2">
         <div class="row">
             <div class="col-6">
+                <!--<button @click="socket.emit('restart_routers')" class="float-right">Restart all</button>-->
                 <h1>Routers</h1>
                 <ul v-for="(router, name) in routers">
                     <li>
@@ -59,8 +60,12 @@
 
                 <h1>Batch</h1>
                 <textarea class="batch" v-model="batch" rows="5"></textarea>
-                <button @click="Send(batch)">Send to All</button>
-                <button @click="Send(batch, [room]) ">Send to Selected</button>
+                <div class="mb-2">
+                    <button @click="Send(batch)">Send to All</button>
+                    <button @click="Send(batch, [room]) ">Send to Selected</button>
+                </div>
+                
+                <button @click="interfaces_modal = true">Interfaces</button>
             </div>
             <div class="col-6 terminal" ref="terminal">
                 <h1>{{ room || '--inactive--' }} terminal</h1>
@@ -98,6 +103,14 @@
                 <button v-on:click="new_router = false" class="btn btn-secondary">Cancel</button>
             </div>
         </modal>
+
+        <interfaces_modal
+            :routers="routers"
+
+            :opened="interfaces_modal"
+            @closed="interfaces_modal = false"
+            @execute="Execute($event)"
+        ></interfaces_modal>
     </div>
         
     <script type="text/javascript" src="libs/socket.io.js"></script>
@@ -107,62 +120,6 @@
 
         var app = new Vue({
             el: '#app',
-            data: {
-                room: null,
-                socket: null,
-
-                terminal: "",
-                input: '',
-
-                routers: {},
-                new_router: false,
-
-                batch: ''
-            },
-            methods: {
-                Room(name) {
-                    this.socket.emit('room', name);
-                    this.room = name;
-
-                    this.terminal = '';
-                    this.input = '';
-                },
-                AutoAdd() {
-                    var total = prompt("How many routers do you wish to add?", "5");
-                    if (total != null) {
-                        for(var i = 0; i < total; i++) {
-                            this.socket.emit('add_router', {
-                                name: "R"+i,
-                                host: "127.0.0.1",
-                                port: "500"+i
-                            });
-                        }
-                    }
-                },
-                NewRouter() {
-                    this.$set(this, 'new_router', {
-                        name: "R2",
-                        host: "127.0.0.1",
-                        port: "5001"
-                    });
-                },
-                Send(data, to = null) {
-                    this.socket.emit("data", {
-                        data, to
-                    });
-                },
-                Receive(data) {
-                    this.terminal += data;
-                    
-                    this.$refs.terminal.scrollTop = this.$refs.terminal.scrollHeight;
-                    //setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 0)
-                }
-            },
-            mounted() {
-                this.socket = io.connect("ws://localhost:8090");
-                this.socket.on("data", (data) => this.Receive(data));
-                this.socket.on("routers", (routers) => this.routers = routers);
-            }
         })
     </script>
 </body>
