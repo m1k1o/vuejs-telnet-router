@@ -1,16 +1,16 @@
 // register modal component
 Vue.component('modal', {
     template: `
-        <transition name="modal" @keydown.esc="$emit('close')">
+        <transition name="modal" @keydown.esc="Close()">
             <div>
-                <div class="modal fade show" style="display:block;" v-on:click.self="$emit('close')">
-                    <div class="modal-dialog" role="document">
+                <div class="modal fade show" style="display:block;overflow:auto;" v-on:click.self="Close()">
+                    <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <slot name="header">
                                     <h5 class="modal-title">Modal title</h5>
                                 </slot>
-                                <button type="button" class="close" v-on:click.self="$emit('close')">
+                                <button type="button" class="close" v-on:click.self="Close()">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
@@ -21,7 +21,7 @@ Vue.component('modal', {
                             </div>
                             <div class="modal-footer">
                                 <slot name="footer">
-                                    <button class="btn btn-secondary" @click="$emit('close')">Close</button>
+                                    <button class="btn btn-secondary" @click="Close()">Close</button>
                                 </slot>
                             </div>
                         </div>
@@ -31,12 +31,19 @@ Vue.component('modal', {
             </div>
         </transition>
     `,
+    methods: {
+        Close() {
+            this.$emit('close');
+            document.body.style.overflow = "auto";
+        }
+    },
     mounted() {
+        document.body.style.overflow = "hidden";
         window.addEventListener('keydown', (event) => {
             // If  ESC key was pressed...
             if (event.keyCode === 27) {
                 // try close your dialog
-                this.$emit('close');
+                this.Close();
             }
         });
     }
