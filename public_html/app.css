@@ -1,0 +1,27 @@
+#telnet-router, #telnet-router > .row {
+    height: 100%;
+}
+#telnet-router {
+	height:  100%;
+	min-height: 100vh;
+    background: #222;
+    color: #CCC;
+    font-family: "Consolas", monospace;
+}
+#telnet-router .terminal {
+    max-height:100%;
+    overflow-y: auto;
+}
+#telnet-router .terminal_pre {
+    white-space: pre;
+}
+#telnet-router .input,
+#telnet-router .batch {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color:white;
+    line-height: 1;
+}
+#app .batch {
+    width: 100%;
+}
