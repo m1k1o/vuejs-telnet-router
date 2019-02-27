@@ -40,13 +40,14 @@ http.listen(port, function () {
 var routers = {};
 function NewRouter(name, host, port){
     var connection = new Telnet()
-    connection.connect({
+    var params = {
         host,
         port,
         shellPrompt: '#',
-        timeout: 500,  ors: '\r\n',
+        timeout: 500,
+        ors: '\r\n',
         waitfor: '\n'
-    })
+    };
     
     connection.on("data", function(data){
         io.to(name).emit("data", ''+data);
@@ -54,31 +55,38 @@ function NewRouter(name, host, port){
 
     connection.on('error', function(error) {
         routers[name].status = 'error';
-        UpdateRotuer();
+        UpdateRotuers();
+    })
+
+    connection.on('close', function() {
+        routers[name].status = 'closed';
+        UpdateRotuers();
     })
 
     connection.on('ready', function(prompt) {
         routers[name].status = 'ready';
-        UpdateRotuer();
+        UpdateRotuers();
     })
 
     routers[name] = {
         connection,
+        params,
         host,
         port,
         status: 'waiting...'
     };
-    UpdateRotuer();
+
+    return connection.connect(params);
 }
 
 function RemoveRotuer(name){
     if(name in routers) {
-        routers[name].connection.end();
-        delete routers[name];
+        return routers[name].connection.end().then(() => {
+            delete routers[name];
+        })
     }
-    UpdateRotuer();
 }
-function UpdateRotuer(){
+function UpdateRotuers(){
     var obj = {};
     for (const router in routers) {
         if (routers.hasOwnProperty(router)) {
@@ -94,15 +102,27 @@ function GetRotuer(name, running = false){
     }
 
     var router = routers[name];
-    if(router.status !== 'ready') {
+    if(running && router.status !== 'ready') {
         return null;
     }
     
     return router;
 }
 
-NewRouter("R1", "127.0.0.1", 5000);
+/*
+function RestartRouters() {
+    for (const router in routers) {
+        var {host, port} = routers[router];
 
+        var promise = RemoveRotuer(router);
+        if(promise) {
+            promise.then(() => {
+                NewRouter(router, host, port);
+            })
+        }
+    }
+}
+*/
 
 io.sockets.on("connection", function(socket) {
     console.log("New connection!");
@@ -120,22 +140,30 @@ io.sockets.on("connection", function(socket) {
     });
 
     // Routers
-    socket.emit("routers", routers);
+    UpdateRotuers();
 	
 	socket.on("add_router", ({name, host, port}) => {
 		NewRouter(name, host, port);
+        UpdateRotuers();
 	});
 	socket.on("remove_router", (name) => {
 		RemoveRotuer(name);
+        UpdateRotuers();
 	});
 	socket.on("get_routers", () => {
-        UpdateRotuer();
+        UpdateRotuers();
     });
+    /*
+	socket.on("restart_routers", () => {
+        RestartRouters();
+        UpdateRotuers();
+    });
+    */
     
     // Data
 	socket.on("data", function({data, to}) {
-        var data = (''+data).replace(/[\r\n]+/, '\r').trim()+'\r';
-
+        var cmds = (''+data).split('\n');
+        
         // Get all
         if (!to) to = Object.keys(routers);
 
@@ -143,7 +171,9 @@ io.sockets.on("connection", function(socket) {
         for (var name of to) {
             var router = GetRotuer(name, true);
             if(router) {
-                router.connection.send(data)
+                for (var cmd of cmds) {
+                    router.connection.send(cmd.trim()+'\r\n');
+                }
             }
         }
 	});
