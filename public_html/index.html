@@ -14,14 +14,13 @@
 <body>
     <div id="app"></div>
         
-    <script type="text/javascript" src="libs/socket.io.js"></script>
-    <script type="text/javascript" src="libs/vue.js"></script>
-    <script type="text/javascript" src="components/modal.js"></script>
-    <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript" src="autoload.js"></script>
     <script>
-        var app = new Vue({
-            el: "#app",
-            template: `<telnet-router></telnet-router>`
+        vuejs_telnet_router(() => {
+            new Vue({
+                el: "#app",
+                template: `<telnet-router></telnet-router>`
+            })
         })
     </script>
 </body>
