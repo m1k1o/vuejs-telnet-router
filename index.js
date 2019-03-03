@@ -151,6 +151,19 @@ io.sockets.on("connection", function(socket) {
 	socket.on("devices", () => {
         Devices();
     });
+	socket.on("devices_put", async (input) => {
+        // Remove all
+        for(var name in devices) {
+            await Deivce_Remove(name)
+        }
+        
+        for(var dev of input) {
+            var {name, host, port} = dev;
+            Deivce_Add(name, host, port);
+        }
+        
+        Devices();
+	});
 	socket.on("device_add", ({name, host, port}) => {
 		Deivce_Add(name, host, port);
         Devices();
