@@ -1,5 +1,5 @@
 Vue.component('interfaces', {
-    props: ['opened', 'routers'],
+    props: ['opened'],
     watch: { 
         opened: function(newVal, oldVal) {
             if(!oldVal && newVal) {
@@ -25,24 +25,24 @@ Vue.component('interfaces', {
             </div>
             <div slot="body" class="form-horizontal">
                 <table class="table" v-if="build.length == 0">
-                    <template v-for="(router, router_name) in routers">
+                    <template v-for="(device, device_name) in devices">
                         <tr>
-                            <td colspan="4">
-                                <button class="btn btn-success float-right" @click="AddIface(router_name)" tabindex="-1">+</button>
-                                <h3 class="mb-0">{{ router_name }} <small>{{ router.host }}:{{ router.port }} ({{ router.status }})</small></h3>
+                            <td colspan="3">
+                                <h3 class="mb-0">{{ device_name }} <small>{{ device.host }}:{{ device.port }} ({{ device.status }})</small></h3>
                             </td>
+                            <td><button class="btn btn-success" @click="AddIface(device_name)" tabindex="-1">+</button></td>
                         </tr>
-                        <tr v-for="(iface, iface_name) in data[router_name]" class="my-2">
-                            <td><button class="btn btn-danger" @click="$delete(data[router_name], iface_name)" tabindex="-1">X</button></td>
+                        <tr v-for="(iface, iface_name) in data[device_name]" class="my-2">
                             <td><span class="form-control-plaintext">{{ iface_name }}</span></td>
                             <td><input class="form-control" type="text" v-model="iface.ip" placeholder="IP"></td>
                             <td><input class="form-control" type="text" v-model="iface.mask" placeholder="Mask"></td>
+                            <td><button class="btn btn-danger" @click="$delete(data[device_name], iface_name)" tabindex="-1">X</button></td>
                         </tr>
                     </template>
                 </table>
-                <template v-for="cmd in build">
-                    <h3>{{ cmd.to }}</h3>
-                    <pre>{{ cmd.data }}</pre>
+                <template v-for="obj in build">
+                    <h3>{{ obj.to }}</h3>
+                    <pre>{{ obj.cmds }}</pre>
                 </template>
             </div>
             <div slot="footer">
@@ -53,19 +53,27 @@ Vue.component('interfaces', {
             </div>
         </modal>
     `,
+	computed: {
+		devices() {
+			return this.$store.state.devices;
+		},
+		running() {
+			return this.$store.state.running;
+		}
+	},
     methods: {
-        AddIface(router_name) {
+        AddIface(device_name) {
             var iface_name = prompt("What name do you wish new interface should have?", "fa0/3");
             if (iface_name != null) {
-                this.$set(this.data[router_name], iface_name, { ...this.iface });
+                this.$set(this.data[device_name], iface_name, { ...this.iface });
             }
         },
         Open(){
             var iface = { ip: '', mask: '' };
 
             var ifaces = {};
-            for (const router in this.routers) {
-                ifaces[router] = {
+            for (const device in this.devices) {
+                ifaces[device] = {
                     "fa0/0": { ...this.iface },
                     "fa0/1": { ...this.iface }
                 };
@@ -80,17 +88,17 @@ Vue.component('interfaces', {
             this.$emit("closed");
         },
         Action(){
-            this.$emit("execute", this.build);
+			this.$store.dispatch("EXECUTE", this.build)
             this.Close();
         },
         Build(){
             var result = [];
-            for (const router_name in this.data) {
-                var router_ifaces = this.data[router_name];
+            for (const device_name in this.data) {
+                var device_ifaces = this.data[device_name];
 
                 var cmds = "";
-                for (const iface_name in router_ifaces) {
-                    var iface = router_ifaces[iface_name];
+                for (const iface_name in device_ifaces) {
+                    var iface = device_ifaces[iface_name];
 
                     if(!iface.ip || !iface.mask) continue;
 
@@ -102,8 +110,8 @@ Vue.component('interfaces', {
                 }
 
                 result.push({
-                    data: cmds,
-                    to: [router_name]
+                    cmds,
+                    to: [device_name]
                 });
             }
 

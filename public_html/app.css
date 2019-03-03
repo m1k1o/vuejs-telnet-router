@@ -9,7 +9,7 @@
     font-family: "Consolas", monospace;
 }
 #telnet-router .terminal {
-    max-height:100%;
+    max-height: calc(0.5rem - 56px + 100vh - 150px);
     overflow-y: auto;
 }
 #telnet-router .terminal_pre {
@@ -22,6 +22,14 @@
     color:white;
     line-height: 1;
 }
-#app .batch {
+#telnet-router .batch {
     width: 100%;
+}
+#telnet-router a {
+    color: white;
+}
+#telnet-router .nav-pills .nav-link.active,
+#telnet-router .nav-pills .show>.nav-link {
+    background: white;
+    color: black;
 }

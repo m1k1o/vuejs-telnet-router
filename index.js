@@ -2,33 +2,6 @@
 
 var Telnet = require('telnet-client')
 
- /*
-// display server response
-connection.on("data", function(data){
-	process.stdout.write(''+data);
-});
-
-connection.on('ready', function(prompt) {
-  connection.send("sh ip int br\r\n")
-})
- 
-connection.on('timeout', function() {
-  console.log('socket timeout!')
-  //connection.end()
-})
- 
-connection.on('close', function() {
-  console.log('connection closed')
-})
-
-var stdin = process.openStdin();
-stdin.addListener("data", function(d) {
-	
-	connection.send(d.toString())
-	
-});
-*/
-
 var port = process.argv[2] || 8090;
 var http = require("http").createServer();
 var io = require("socket.io")(http);
@@ -37,8 +10,8 @@ http.listen(port, function () {
   console.log("Starting server on port %s", port);
 });
 
-var routers = {};
-function NewRouter(name, host, port){
+var devices = {};
+function Deivce_Add(name, host, port){
     var connection = new Telnet()
     var params = {
         host,
@@ -50,25 +23,25 @@ function NewRouter(name, host, port){
     };
     
     connection.on("data", function(data){
-        io.to(name).emit("data", ''+data);
+        io.to(name).emit("terminal_data", ''+data);
     });
 
     connection.on('error', function(error) {
-        routers[name].status = 'error';
-        UpdateRotuers();
+        devices[name].status = 'error';
+        Devices();
     })
 
     connection.on('close', function() {
-        routers[name].status = 'closed';
-        UpdateRotuers();
+        devices[name].status = 'closed';
+        Devices();
     })
 
     connection.on('ready', function(prompt) {
-        routers[name].status = 'ready';
-        UpdateRotuers();
+        devices[name].status = 'ready';
+        Devices();
     })
 
-    routers[name] = {
+    devices[name] = {
         connection,
         params,
         host,
@@ -79,110 +52,95 @@ function NewRouter(name, host, port){
     return connection.connect(params);
 }
 
-function RemoveRotuer(name){
-    if(name in routers) {
-        return routers[name].connection.end().then(() => {
-            delete routers[name];
+function Deivce_Remove(name){
+    if(name in devices) {
+        return devices[name].connection.end().then(() => {
+            delete devices[name];
         })
     }
 }
-function UpdateRotuers(){
+
+function Devices(){
     var obj = {};
-    for (const router in routers) {
-        if (routers.hasOwnProperty(router)) {
-            var {name, host, port, status} = routers[router];
-            obj[router] = {name, host, port, status}
+    for (const device in devices) {
+        if (devices.hasOwnProperty(device)) {
+            var {name, host, port, status} = devices[device];
+            obj[device] = {name, host, port, status}
         }
     }
-    io.sockets.emit("routers", obj);
+    io.sockets.emit("devices", obj);
 }
-function GetRotuer(name, running = false){
-    if(!(name in routers)) {
+
+function Deivce_Get(name, running = false){
+    if(!(name in devices)) {
         return null;
     }
 
-    var router = routers[name];
-    if(running && router.status !== 'ready') {
+    var device = devices[name];
+    if(running && device.status !== 'ready') {
         return null;
     }
     
-    return router;
+    return device;
 }
-
-/*
-function RestartRouters() {
-    for (const router in routers) {
-        var {host, port} = routers[router];
-
-        var promise = RemoveRotuer(router);
-        if(promise) {
-            promise.then(() => {
-                NewRouter(router, host, port);
-            })
-        }
-    }
-}
-*/
 
 io.sockets.on("connection", function(socket) {
     console.log("New connection!");
     
-    var selected_router = null;
-    socket.on('room', function(room) {
-        if (selected_router != null) {
-            socket.leave(selected_router);
+    // Terminal Device
+    var terminal_device = null;
+    socket.on('terminal_set', function(device) {
+        if (terminal_device != null) {
+            socket.leave(terminal_device);
         }
         
-        if (room != null) {
-            socket.join(room);
+        if (device != null) {
+            socket.join(device);
         }
-        selected_router = room;
+
+        terminal_device = device;
+        socket.emit("terminal_device", device);
     });
 
-    // Routers
-    UpdateRotuers();
-	
-	socket.on("add_router", ({name, host, port}) => {
-		NewRouter(name, host, port);
-        UpdateRotuers();
-	});
-	socket.on("remove_router", (name) => {
-		RemoveRotuer(name);
-        UpdateRotuers();
-	});
-	socket.on("get_routers", () => {
-        UpdateRotuers();
+    // Devices
+    Devices();
+	socket.on("devices", () => {
+        Devices();
     });
-    /*
-	socket.on("restart_routers", () => {
-        RestartRouters();
-        UpdateRotuers();
-    });
-    */
+	socket.on("device_add", ({name, host, port}) => {
+		Deivce_Add(name, host, port);
+        Devices();
+	});
+	socket.on("device_remove", (name) => {
+		Deivce_Remove(name).then(() => {
+            Devices();
+        });
+	});
     
-    // Data
-	socket.on("data", function({data, to}) {
-        var cmds = (''+data).split('\n');
+    // Send Data
+	socket.on("execute", function({cmds, to}) {
+        cmds = String(cmds).trim().split('\n');
         
         // Get all
-        if (!to) to = Object.keys(routers);
+        if (!to) to = Object.keys(devices);
 
         // Get specific
         for (var name of to) {
-            var router = GetRotuer(name, true);
-            if(router) {
+            var device = Deivce_Get(name, true);
+            if(device) {
                 for (var cmd of cmds) {
-                    router.connection.send(cmd.trim()+'\r\n');
+                    device.connection.send(cmd.trim()+'\r\n');
                 }
             }
         }
 	});
-	
+    
+    // Disconnect
 	socket.on("disconnect", function() {
         console.log("Got disconnect!");
         
-        if (selected_router != null) {
-            socket.leave(selected_router);
+        if (terminal_device != null) {
+            socket.leave(terminal_device);
         }
 	});
 });

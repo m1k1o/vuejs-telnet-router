@@ -2,7 +2,7 @@
 Vue.component('modal', {
     template: `
         <transition name="modal" @keydown.esc="Close()">
-            <div>
+            <div style="color:black;">
                 <div class="modal fade show" style="display:block;overflow:auto;" v-on:click.self="Close()">
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
