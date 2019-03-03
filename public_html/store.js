@@ -12,7 +12,15 @@ const store = new Vuex.Store({
             data: null
         },
         
-        devices: {}
+        devices: {},
+
+        gns: {
+            login: {
+                url: "http://127.0.0.1:3080/",
+                name: "admin",
+                pass: "aZG1DD8QSr55LfgnrM15kBPHXgIedTle3oaDZTmoYaRnsAJnMH5t1kWt3qzqDGii"
+            }
+        }
     },
     mutations: {
         RUNNING(state, running) {
@@ -36,9 +44,20 @@ const store = new Vuex.Store({
         // DEVICES
         DEVICES(state, devices) {
             Vue.set(state, 'devices', devices)
+        },
+
+        // GNS
+        GNS_LOGIN(state, {url, name, pass}) {
+            Vue.set(state.gns, 'login', {url, name, pass})
         }
     },
-    getters: {},
+    getters: {
+        http_url(state){
+            return state.connection.url
+                .replace(/^ws(s?)\:\/\//, "http$1://")
+                .replace(/\/$/, "");
+        }
+    },
     actions: {
         CONNECT({state, commit}, url) {
 			if(state.connection.socket != null) {
@@ -110,6 +129,17 @@ const store = new Vuex.Store({
                 service: "device_remove",
                 data: id
             })
+        },
+        GNS_API({state, getters}, path) {
+            var url = new URL(getters.http_url + "/gns_api")
+            
+            url.search = new URLSearchParams({
+                url: state.gns.login.url.replace(/\/$/, "") + path,
+                username: state.gns.login.name,
+                password: state.gns.login.pass
+            })
+
+            return fetch(url).then((res) => res.json())
         }
     }
 })
