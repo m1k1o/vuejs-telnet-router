@@ -4,12 +4,13 @@
   "description": "Vue.js telnet client for sendig batch commands to (cisco) routers.",
   "main": "index.js",
   "scripts": {
-	  "start": "node index.js" ,
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.18.0",
     "socket.io": "^2.2.0",
     "telnet-client": "^0.16.3"
   }

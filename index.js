@@ -1,6 +1,8 @@
 'use strict'
 
 var Telnet = require('telnet-client')
+var axios = require('axios');
+var url = require('url');
 
 var port = process.argv[2] || 8090;
 var http = require("http").createServer();
@@ -8,6 +10,48 @@ var io = require("socket.io")(http);
 
 http.listen(port, function () {
   console.log("Starting server on port %s", port);
+});
+
+http.on('request', async (req, res) => {
+    // Is GNS Api
+    if(!/^\/gns_api/.test(req.url)) {
+        return ;
+    }
+
+    var query = url.parse(req.url, true).query;
+
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Request-Method', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    if (req.method === 'OPTIONS' ) {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
+    
+    res.writeHead(200, {'Content-Type': 'text/json'});
+
+    try {
+        var axios_resp = await axios.get(query.url , {
+            auth: {
+                username: query.username,
+                password: query.password
+            }
+        })
+        
+        res.end(JSON.stringify({
+            error: false,
+            data: axios_resp.data
+        }));
+    } catch (error) {
+        console.log(error);
+        res.end(JSON.stringify({
+            error: true,
+            data: null
+        }));
+    }
 });
 
 var devices = {};
