@@ -79,38 +79,38 @@ const store = new Vuex.Store({
         EMIT({state}, {service, data}) {
 			if(!state.running) {
                 console.log("Can't emit, not running.")
-                return
+                return null
             }
             
-			state.connection.socket.emit(service, data);
+			return state.connection.socket.emit(service, data);
         },
         TERMINAL_SET({dispatch}, device) {
-            dispatch('EMIT', {
+            return dispatch('EMIT', {
                 service: "terminal_set",
                 data: device
             })
         },
         EXECUTE({dispatch}, input = null) {
             if(Array.isArray(input)) {
-                for (const {cmds, to} of input) {
-                    dispatch('EMIT', {
-                        service: "execute",
-                        data: {cmds, to}
-                    })
-                }
-                return;
+                return (async function(){
+                    for (const {cmds, to} of input) {
+                        await dispatch('EMIT', {
+                            service: "execute",
+                            data: {cmds, to}
+                        })
+                    }
+                }())
             }
 
             if(typeof input === 'object') {
                 const {cmds, to} = input;
-                dispatch('EMIT', {
+                return dispatch('EMIT', {
                     service: "execute",
                     data: {cmds, to}
                 })
-                return;
             }
 
-            dispatch('EMIT', {
+            return dispatch('EMIT', {
                 service: "execute",
                 data: {
                     cmds: input,
@@ -118,14 +118,20 @@ const store = new Vuex.Store({
                 }
             })
         },
+        DEVICES_PUT({dispatch}, data) {
+            return dispatch('EMIT', {
+                service: "devices_put",
+                data
+            })
+        },
         DEVICE_ADD({dispatch}, data) {
-            dispatch('EMIT', {
+            return dispatch('EMIT', {
                 service: "device_add",
                 data
             })
         },
         DEVICE_REMOVE({dispatch}, id) {
-            dispatch('EMIT', {
+            return dispatch('EMIT', {
                 service: "device_remove",
                 data: id
             })
