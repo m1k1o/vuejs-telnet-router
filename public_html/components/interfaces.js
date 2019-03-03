@@ -69,8 +69,8 @@ Vue.component('interfaces', {
             }
         },
         Open(){
-            var iface = { ip: '', mask: '' };
-
+            document.body.style.overflow = "hidden";
+            
             var ifaces = {};
             for (const device in this.devices) {
                 ifaces[device] = {
@@ -83,6 +83,7 @@ Vue.component('interfaces', {
             this.visible = true;
         },
         Close(){
+            document.body.style.overflow = "auto";
             this.visible = false;
             this.build = [];
             this.$emit("closed");

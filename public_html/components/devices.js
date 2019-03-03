@@ -220,9 +220,11 @@ Vue.component('devices', {
             },
             methods: {
                 Open(){
+                    document.body.style.overflow = "hidden";
                     this.visible = true;
                 },
                 Close(){
+                    document.body.style.overflow = "auto";
                     this.visible = false;
                     this.$emit("closed");
                 },
@@ -271,8 +273,9 @@ Vue.component('devices', {
                             }
                         }
                         
-                        this.$store.dispatch("DEVICES_PUT", devs);
-                        this.Close()
+                        this.$store.dispatch("DEVICES_PUT", devs).then(() => {
+                            this.Close()
+                        })
                     }
                 }
             }

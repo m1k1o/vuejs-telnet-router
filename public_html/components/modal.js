@@ -34,11 +34,9 @@ Vue.component('modal', {
     methods: {
         Close() {
             this.$emit('close');
-            document.body.style.overflow = "auto";
         }
     },
     mounted() {
-        document.body.style.overflow = "hidden";
         window.addEventListener('keydown', (event) => {
             // If  ESC key was pressed...
             if (event.keyCode === 27) {

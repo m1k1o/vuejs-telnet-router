@@ -70,17 +70,17 @@ function Deivce_Add(name, host, port){
     });
 
     connection.on('error', function(error) {
-        devices[name].status = 'error';
+        !devices[name] || (devices[name].status = 'error');
         Devices();
     })
 
     connection.on('close', function() {
-        devices[name].status = 'closed';
+        !devices[name] || (devices[name].status = 'closed');
         Devices();
     })
 
     connection.on('ready', function(prompt) {
-        devices[name].status = 'ready';
+        !devices[name] || (devices[name].status = 'ready');
         Devices();
     })
 
