@@ -45,5 +45,8 @@ Vue.component('telnet-router', {
         SendBatch() {
 			this.$store.dispatch("EXECUTE", this.batch)
         }
-    }
+	},
+	mounted() {
+		this.$store.dispatch('INIT')
+	}
 });

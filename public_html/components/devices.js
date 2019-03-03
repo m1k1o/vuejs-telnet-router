@@ -144,12 +144,7 @@ Vue.component('devices', {
                 step: 1,
                 error: false,
 
-                login: {
-                    url: "http://127.0.0.1:3080/",
-                    name: "admin",
-                    pass: "aZG1DD8QSr55LfgnrM15kBPHXgIedTle3oaDZTmoYaRnsAJnMH5t1kWt3qzqDGii"
-                },
-
+                login: {},
                 projects: {},
                 project_nodes: {}
             }),
@@ -178,7 +173,7 @@ Vue.component('devices', {
                                     <input type="text" class="form-control" v-model="login.pass">
                                 </div>
                             </div>
-                            <div class="alert alert-danger" v-if="error"> Error! Connecton failed </div>
+                            <div class="alert alert-danger" v-if="error"> {{ error }} </div>
                         </div>
                         <div slot="footer">
                             <button v-on:click="Action()" class="btn btn-success">Next &gt;</button>
@@ -220,6 +215,9 @@ Vue.component('devices', {
                     </template>
                 </modal>
             `,
+            mounted() {
+                this.$set(this, 'login', this.$store.state.gns.login);
+            },
             methods: {
                 Open(){
                     this.visible = true;
@@ -228,12 +226,20 @@ Vue.component('devices', {
                     this.visible = false;
                     this.$emit("closed");
                 },
-                Action(input){
+                Action(input = null){
                     if(this.step == 1) {
+                        if(/\/\/(.*):(.*)@/.test(this.login.url)) {
+                            var m = this.login.url.match(/\/\/(.*):(.*)@/)
+                            this.login.name = m[1];
+                            this.login.pass = m[2];
+
+                            this.login.url = this.login.url.replace(/\/\/(.*):(.*)@/, "//")
+                        }
+
                         this.$store.commit('GNS_LOGIN', this.login)
                         this.$store.dispatch("GNS_API", "/v2/projects").then((res) => {
                             if(res.error === true) {
-                                this.error = true;
+                                this.error = res.message;
                                 return;
                             }
 
@@ -245,7 +251,7 @@ Vue.component('devices', {
                     if(this.step == 2) {
                         this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/nodes").then((res) => {
                             if(res.error === true) {
-                                this.error = true;
+                                this.error = res.message;
                                 return;
                             }
 

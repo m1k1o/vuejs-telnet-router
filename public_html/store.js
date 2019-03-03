@@ -18,7 +18,7 @@ const store = new Vuex.Store({
             login: {
                 url: "http://127.0.0.1:3080/",
                 name: "admin",
-                pass: "aZG1DD8QSr55LfgnrM15kBPHXgIedTle3oaDZTmoYaRnsAJnMH5t1kWt3qzqDGii"
+                pass: ""
             }
         }
     },
@@ -47,8 +47,9 @@ const store = new Vuex.Store({
         },
 
         // GNS
-        GNS_LOGIN(state, {url, name, pass}) {
-            Vue.set(state.gns, 'login', {url, name, pass})
+        GNS_LOGIN(state, login) {
+            Vue.set(state.gns, 'login', login)
+            localStorage.setItem('gns_login', JSON.stringify(login));
         }
     },
     getters: {
@@ -59,6 +60,12 @@ const store = new Vuex.Store({
         }
     },
     actions: {
+        INIT({commit}){
+            if(localStorage.getItem('gns_login')) {
+                var {url, name, pass} = JSON.parse(localStorage.getItem('gns_login'));
+                commit('GNS_LOGIN', {url, name, pass})
+            }
+        },
         CONNECT({state, commit}, url) {
 			if(state.connection.socket != null) {
 				state.connection.socket.close()

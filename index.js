@@ -46,10 +46,9 @@ http.on('request', async (req, res) => {
             data: axios_resp.data
         }));
     } catch (error) {
-        console.log(error);
         res.end(JSON.stringify({
             error: true,
-            data: null
+            message: String(error)
         }));
     }
 });
