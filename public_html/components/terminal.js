@@ -52,8 +52,9 @@ Vue.component('terminal', {
             }
         },
         data() {
-			// Auto scroll
-            this.$refs.terminal.scrollTop = this.$refs.terminal.scrollHeight;
+            // Auto scroll
+            if(this.$refs.terminal)
+                this.$refs.terminal.scrollTop = this.$refs.terminal.scrollHeight;
         },
         terminal_device() {
             this.$store.commit("TERMINAL_FLUSH_DATA")
