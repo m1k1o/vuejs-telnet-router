@@ -142,7 +142,7 @@ Vue.component('devices', {
             data: () => ({
                 visible: false,
                 step: 1,
-                error: "",
+                error: false,
 
                 login: {
                     url: "http://127.0.0.1:3080/",
@@ -178,6 +178,7 @@ Vue.component('devices', {
                                     <input type="text" class="form-control" v-model="login.pass">
                                 </div>
                             </div>
+                            <div class="alert alert-danger" v-if="error"> Error! Connecton failed </div>
                         </div>
                         <div slot="footer">
                             <button v-on:click="Action()" class="btn btn-success">Next &gt;</button>
@@ -232,7 +233,7 @@ Vue.component('devices', {
                         this.$store.commit('GNS_LOGIN', this.login)
                         this.$store.dispatch("GNS_API", "/v2/projects").then((res) => {
                             if(res.error === true) {
-                                this.error = "Error";
+                                this.error = true;
                                 return;
                             }
 
@@ -244,7 +245,7 @@ Vue.component('devices', {
                     if(this.step == 2) {
                         this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/nodes").then((res) => {
                             if(res.error === true) {
-                                this.error = "Error";
+                                this.error = true;
                                 return;
                             }
 
