@@ -62,7 +62,8 @@ function Deivce_Add(name, host, port){
         shellPrompt: '#',
         timeout: 500,
         ors: '\r\n',
-        waitfor: '\n'
+        waitfor: '\n',
+        pageSeparator: '--More--'
     };
     
     connection.on("data", function(data){

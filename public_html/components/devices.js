@@ -262,7 +262,9 @@ Vue.component('devices', {
                         })
                     }
                     if(this.step == 3) {
+                        // DEVICES
                         var devs = [];
+                        var ports = {};
                         for(var node of this.project_nodes) {
                             if (node.console_type == "telnet") {
                                 devs.push({
@@ -270,9 +272,14 @@ Vue.component('devices', {
                                     host: node.console_host,
                                     port: node.console
                                 })
+
+                                ports[node.name] = node.ports.map(port => {
+                                    return port.short_name;
+                                })
                             }
                         }
                         
+                        this.$store.commit("PORTS_PUT", ports);
                         this.$store.dispatch("DEVICES_PUT", devs).then(() => {
                             this.Close()
                         })

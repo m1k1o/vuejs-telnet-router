@@ -19,7 +19,8 @@ const store = new Vuex.Store({
                 url: "http://127.0.0.1:3080/",
                 name: "admin",
                 pass: ""
-            }
+            },
+            ports: {}
         }
     },
     mutations: {
@@ -50,7 +51,11 @@ const store = new Vuex.Store({
         GNS_LOGIN(state, login) {
             Vue.set(state.gns, 'login', login)
             localStorage.setItem('gns_login', JSON.stringify(login));
-        }
+        },
+
+        PORTS_PUT(state, data) {
+            Vue.set(state.gns, 'ports', data)
+        },
     },
     getters: {
         http_url(state){

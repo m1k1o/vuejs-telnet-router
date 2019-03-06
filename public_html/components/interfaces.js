@@ -57,6 +57,9 @@ Vue.component('interfaces', {
 		devices() {
 			return this.$store.state.devices;
 		},
+		ports() {
+			return this.$store.state.gns.ports;
+		},
 		running() {
 			return this.$store.state.running;
 		}
@@ -73,10 +76,17 @@ Vue.component('interfaces', {
             
             var ifaces = {};
             for (const device in this.devices) {
-                ifaces[device] = {
-                    "fa0/0": { ...this.iface },
-                    "fa0/1": { ...this.iface }
-                };
+                if(device in this.ports) {
+                    ifaces[device] = {};
+                    for (const port of this.ports[device]) {
+                        ifaces[device][port] = { ...this.iface };
+                    }
+                } else {
+                    ifaces[device] = {
+                        "fa0/0": { ...this.iface },
+                        "fa0/1": { ...this.iface }
+                    };
+                }
             }
 
             this.$set(this, 'data', ifaces);
