@@ -13,8 +13,70 @@ http.listen(port, function () {
 });
 
 http.on('request', async (req, res) => {
-    // Is GNS Api
-    if(!/^\/gns_api/.test(req.url)) {
+    // Is Execute
+    if(/^\/execute/.test(req.url) && req.method === 'POST') {
+        let deivce_name = req.url.replace(/^\/execute\/(.*)\/?/, "$1");
+        
+        let cmd = '';
+        req.on('data', chunk => {
+            cmd += chunk.toString();
+        });
+        req.on('end', () => {
+            new Promise((resolve, reject) => {
+                let device = Deivce_Get(deivce_name, true);
+                if(!device) {
+                    reject("device "+deivce_name+" not found");
+                    return ;
+                }
+
+                device.connection.write(cmd.trim()+'\r\n');
+                
+                let response = "";
+                let timeout = null;
+                function unsubscribe(multiplier = 1) {
+                    clearInterval(timeout);
+                    timeout = setTimeout(() => {
+                        // Paginate?
+                        if(response.endsWith("\r\n --More-- ")) {
+                            device.connection.write(Buffer.from('20', 'hex'))
+                            unsubscribe()
+                            return;
+                        }
+
+                        if(response.endsWith("Building configuration...\r\n")) {
+                            unsubscribe(5)
+                            return;
+                        }
+
+                        device.connection.removeListener("data", handler);
+                        resolve(response);
+                    }, 300*multiplier)
+                }
+                
+                unsubscribe();
+                let handler = function(data) {
+                    var str = String(data);
+                    for (var i = 0; i < str.length; i++) {
+                        if(str.charCodeAt(i) == 8) {
+                            response = response.slice(0, -1);
+                        } else {
+                            response += str.charAt(i);
+                        }
+                    }
+
+                    unsubscribe();
+                };
+
+                device.connection.on("data", handler);
+            }).then((data) => {
+                res.writeHead(200);
+                res.end(data);
+            }, (err) => {
+                res.writeHead(400);
+                res.end(err);
+            });
+        });
+
         return ;
     }
 
