@@ -18,38 +18,42 @@ http.on('request', async (req, res) => {
         return ;
     }
 
-    var query = url.parse(req.url, true).query;
+    // Is GNS Api
+    if(/^\/gns_api/.test(req.url)) {
+        var query = url.parse(req.url, true).query;
 
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Request-Method', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-    if (req.method === 'OPTIONS' ) {
-        res.writeHead(200);
-        res.end();
-        return;
-    }
-    
-    res.writeHead(200, {'Content-Type': 'text/json'});
-
-    try {
-        var axios_resp = await axios.get(query.url , {
-            auth: {
-                username: query.username,
-                password: query.password
-            }
-        })
+        // Set CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Request-Method', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+        res.setHeader('Access-Control-Allow-Headers', '*');
+        if (req.method === 'OPTIONS' ) {
+            res.writeHead(200);
+            res.end();
+            return;
+        }
         
-        res.end(JSON.stringify({
-            error: false,
-            data: axios_resp.data
-        }));
-    } catch (error) {
-        res.end(JSON.stringify({
-            error: true,
-            message: String(error)
-        }));
+        res.writeHead(200, {'Content-Type': 'text/json'});
+
+        try {
+            var axios_resp = await axios.get(query.url , {
+                auth: {
+                    username: query.username,
+                    password: query.password
+                }
+            })
+            
+            res.end(JSON.stringify({
+                error: false,
+                data: axios_resp.data
+            }));
+        } catch (error) {
+            res.end(JSON.stringify({
+                error: true,
+                message: String(error)
+            }));
+        }
+        return ;
     }
 });
 
@@ -57,15 +61,7 @@ var devices = {};
 function Deivce_Add(name, host, port){
     var params = {host, port};
     var connection = net.createConnection(params);
-
-    connection.setTimeout(3000, () => {
-        !devices[name] || (devices[name].status = 'timeout');
-
-        if (connection._connecting === true) {
-            connection.destroy()
-        }
-    });
-
+    
     connection.on("data", function(data){
         io.to(name).emit("terminal_data", ''+data);
     });
