@@ -9,7 +9,8 @@ const store = new Vuex.Store({
 
         terminal: {
             device: null,
-            data: null
+            data: null,
+            ignore_special_chars: true
         },
         
         devices: {},
@@ -36,7 +37,19 @@ const store = new Vuex.Store({
             Vue.set(state.terminal, 'device', device)
         },
         TERMINAL_DATA(state, data) {
-            state.terminal.data += data;
+            if(state.terminal.ignore_special_chars){
+                state.terminal.data += data;
+                return;
+            }
+            
+            var str = String(data);
+            for (var i = 0; i < str.length; i++) {
+                if(str.charCodeAt(i) == 8) {
+                    state.terminal.data = state.terminal.data.slice(0, -1);
+                } else {
+                    state.terminal.data += str.charAt(i);
+                }
+            }
         },
         TERMINAL_FLUSH_DATA(state) {
             Vue.set(state.terminal, 'data', "")
