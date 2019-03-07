@@ -4,7 +4,8 @@ const store = new Vuex.Store({
 
         connection: {
             url: "ws://127.0.0.1:8090",
-            socket: null
+            socket: null,
+            auto: false
         },
 
         terminal: {
@@ -28,8 +29,17 @@ const store = new Vuex.Store({
         RUNNING(state, running) {
             Vue.set(state, 'running', running)
         },
-        CONNECTION(state, {socket, url}) {
-            Vue.set(state, 'connection', {socket, url})
+        CONNECTION(state, connection) {
+            for (const key in connection) {
+                if (connection.hasOwnProperty(key) && state.connection.hasOwnProperty(key) && state.connection[key] != connection[key]) {
+                    Vue.set(state.connection, key, connection[key]);
+                }
+            }
+
+            localStorage.setItem('connection', JSON.stringify({
+                url: state.connection.url,
+                auto: state.connection.auto
+            }));
         },
 
         // TERMINAL
@@ -78,17 +88,30 @@ const store = new Vuex.Store({
         }
     },
     actions: {
-        INIT({commit}){
+        INIT({commit, dispatch}){
+            if(localStorage.getItem('connection')) {
+                var data = JSON.parse(localStorage.getItem('connection'));
+                commit('CONNECTION', data)
+
+                if(data.auto) {
+                    dispatch('CONNECT');
+                }
+            }
+            
             if(localStorage.getItem('gns_login')) {
                 var {url, name, pass} = JSON.parse(localStorage.getItem('gns_login'));
                 commit('GNS_LOGIN', {url, name, pass})
             }
         },
-        CONNECT({state, commit}, url) {
+        CONNECT({state, commit}, url = null) {
 			if(state.connection.socket != null) {
 				state.connection.socket.close()
             }
             
+            if (url == null) {
+                url = state.connection.url;
+            }
+
 			commit('CONNECTION', {
                 socket: io.connect(url),
                 url
