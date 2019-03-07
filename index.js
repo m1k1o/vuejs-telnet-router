@@ -1,12 +1,12 @@
 'use strict'
 
-var net = require('net')
 var axios = require('axios');
 var url = require('url');
 
 var port = process.argv[2] || 8090;
 var http = require("http").createServer();
 var io = require("socket.io")(http);
+var devices = require('./devices.js')(io);
 
 http.listen(port, function () {
   console.log("Starting server on port %s", port);
@@ -23,7 +23,7 @@ http.on('request', async (req, res) => {
         });
         req.on('end', () => {
             new Promise((resolve, reject) => {
-                let device = Deivce_Get(deivce_name, true);
+                let device = devices.get(deivce_name, true);
                 if(!device) {
                     reject("device "+deivce_name+" not found");
                     return ;
@@ -119,75 +119,6 @@ http.on('request', async (req, res) => {
     }
 });
 
-var devices = {};
-function Deivce_Add(name, host, port){
-    var params = {host, port};
-    var connection = net.createConnection(params);
-    
-    connection.on("data", function(data){
-        io.to(name).emit("terminal_data", ''+data);
-    });
-
-    connection.on('error', function(error) {
-        !devices[name] || (devices[name].status = 'error');
-        Devices();
-    })
-
-    connection.on('close', function() {
-        !devices[name] || (devices[name].status = 'closed');
-        Devices();
-    })
-
-    connection.on('ready', function() {
-        connection.write('\r\n')
-        !devices[name] || (devices[name].status = 'ready');
-        Devices();
-    })
-
-    devices[name] = {
-        connection,
-        params,
-        host,
-        port,
-        status: 'waiting...'
-    };
-
-    return connection;
-}
-
-function Deivce_Remove(name){
-    if(name in devices) {
-        return new Promise(resolve => {
-            devices[name].connection.end()
-            delete devices[name];
-            resolve()
-        })
-    }
-}
-
-function Devices(){
-    var obj = {};
-    for (const device in devices) {
-        if (devices.hasOwnProperty(device)) {
-            var {name, host, port, status} = devices[device];
-            obj[device] = {name, host, port, status}
-        }
-    }
-    io.sockets.emit("devices", obj);
-}
-
-function Deivce_Get(name, running = false){
-    if(!(name in devices)) {
-        return null;
-    }
-
-    var device = devices[name];
-    if(running && device.status !== 'ready') {
-        return null;
-    }
-    
-    return device;
-}
 
 io.sockets.on("connection", function(socket) {
     console.log("New connection!");
@@ -208,30 +139,21 @@ io.sockets.on("connection", function(socket) {
     });
 
     // Devices
-    Devices();
+    devices.advertise(socket);
 	socket.on("devices", () => {
-        Devices();
+        devices.advertise(socket);
     });
 	socket.on("devices_put", async (input) => {
-        // Remove all
-        for(var name in devices) {
-            await Deivce_Remove(name)
-        }
-        
-        for(var dev of input) {
-            var {name, host, port} = dev;
-            Deivce_Add(name, host, port);
-        }
-        
-        Devices();
+        devices.put(input);
+        devices.advertise(socket);
 	});
 	socket.on("device_add", ({name, host, port}) => {
-		Deivce_Add(name, host, port);
-        Devices();
+		devices.add(name, host, port);
+        devices.advertise(socket);
 	});
 	socket.on("device_remove", (name) => {
-		Deivce_Remove(name).then(() => {
-            Devices();
+		devices.remove(name).then(() => {
+            devices.advertise(socket);
         });
 	});
     
@@ -240,11 +162,11 @@ io.sockets.on("connection", function(socket) {
         cmds = String(cmds).trim().split('\n');
         
         // Get all
-        if (!to) to = Object.keys(devices);
+        if (!to) to = devices.get_names()
 
         // Get specific
         for (var name of to) {
-            var device = Deivce_Get(name, true);
+            var device = devices.get(name, true);
             if(device) {
                 for (var cmd of cmds) {
                     device.connection.write(cmd.trim()+'\r\n');
