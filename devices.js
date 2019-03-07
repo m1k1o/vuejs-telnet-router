@@ -93,5 +93,55 @@ module.exports = function(io) {
         return Object.keys(devices);
     }
 
+    this.execute = function(deivce_name, cmd){
+        return new Promise((resolve, reject) => {
+            let device = this.get(deivce_name, true);
+            if(!device) {
+                reject("device "+deivce_name+" not found");
+                return ;
+            }
+
+            device.connection.write(cmd.trim()+'\r\n');
+            
+            let response = "";
+            let timeout = null;
+            function unsubscribe(multiplier = 1) {
+                clearInterval(timeout);
+                timeout = setTimeout(() => {
+                    // Paginate?
+                    if(response.endsWith("\r\n --More-- ")) {
+                        device.connection.write(Buffer.from('20', 'hex'))
+                        unsubscribe()
+                        return;
+                    }
+
+                    if(response.endsWith("Building configuration...\r\n")) {
+                        unsubscribe(5)
+                        return;
+                    }
+
+                    device.connection.removeListener("data", handler);
+                    resolve(response);
+                }, 300*multiplier)
+            }
+            
+            unsubscribe();
+            let handler = function(data) {
+                var str = String(data);
+                for (var i = 0; i < str.length; i++) {
+                    if(str.charCodeAt(i) == 8) {
+                        response = response.slice(0, -1);
+                    } else {
+                        response += str.charAt(i);
+                    }
+                }
+
+                unsubscribe();
+            };
+
+            device.connection.on("data", handler);
+        })
+    }
+
     return this;
 }

@@ -8,6 +8,8 @@ var http = require("http").createServer();
 var io = require("socket.io")(http);
 var devices = require('./devices.js')(io);
 
+var rc2json = require('./rc2json.js');
+
 http.listen(port, function () {
   console.log("Starting server on port %s", port);
 });
@@ -22,59 +24,29 @@ http.on('request', async (req, res) => {
             cmd += chunk.toString();
         });
         req.on('end', () => {
-            new Promise((resolve, reject) => {
-                let device = devices.get(deivce_name, true);
-                if(!device) {
-                    reject("device "+deivce_name+" not found");
-                    return ;
-                }
-
-                device.connection.write(cmd.trim()+'\r\n');
-                
-                let response = "";
-                let timeout = null;
-                function unsubscribe(multiplier = 1) {
-                    clearInterval(timeout);
-                    timeout = setTimeout(() => {
-                        // Paginate?
-                        if(response.endsWith("\r\n --More-- ")) {
-                            device.connection.write(Buffer.from('20', 'hex'))
-                            unsubscribe()
-                            return;
-                        }
-
-                        if(response.endsWith("Building configuration...\r\n")) {
-                            unsubscribe(5)
-                            return;
-                        }
-
-                        device.connection.removeListener("data", handler);
-                        resolve(response);
-                    }, 300*multiplier)
-                }
-                
-                unsubscribe();
-                let handler = function(data) {
-                    var str = String(data);
-                    for (var i = 0; i < str.length; i++) {
-                        if(str.charCodeAt(i) == 8) {
-                            response = response.slice(0, -1);
-                        } else {
-                            response += str.charAt(i);
-                        }
-                    }
-
-                    unsubscribe();
-                };
-
-                device.connection.on("data", handler);
-            }).then((data) => {
+            devices.execute(deivce_name, cmd).then((data) => {
                 res.writeHead(200);
-                res.end(data);
+                res.end(JSON.stringify(rc2json(data)));
             }, (err) => {
                 res.writeHead(400);
-                res.end(err);
+                res.end(String(err));
             });
+        });
+
+        return ;
+    }
+
+    // Get running config
+    if(/^\/running_config/.test(req.url)) {
+        let deivce_name = req.url.replace(/^\/running_config\/(.*)\/?/, "$1");
+        
+        //deivce_name.connection.write("end\r\n");
+        devices.execute(deivce_name, "show running-config").then((running_config) => {
+            res.writeHead(200);
+            res.end(JSON.stringify(rc2json(running_config, true), null, 4));
+        }, (err) => {
+            res.writeHead(400);
+            res.end(String(err));
         });
 
         return ;
