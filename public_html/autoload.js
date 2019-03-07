@@ -17,10 +17,12 @@ async function vuejs_telnet_router(Initialize, base_path = "") {
         'libs/socket.io.js',
     
         'components/modal.js',
-        'components/interfaces.js',
+        'components/interfaces_old.js',
         'components/connect.js',
         'components/devices.js',
         'components/terminal.js',
+        
+        'components/interfaces.js',
 
         'store.js',
         'app.js'

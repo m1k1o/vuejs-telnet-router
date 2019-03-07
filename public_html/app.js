@@ -16,21 +16,33 @@ Vue.component('telnet-router', {
 					<button @click="SendBatch()">Send to All</button>
 				</div>
 				
-				<button @click="interfaces = true">Interfaces</button>
+				<h1>GUI</h1>
+				<ul>
+					<li><button @click="gui.interfaces_old = true">Interfaces (old)</button></li>
+					<li><button @click="gui.interfaces = true">Interfaces</button></li>
+				</ul>
 			</div>
 			<div class="col-6">
 				<terminal />
 			</div>
 		</div>
 		
+		<interfaces_old
+			:opened="gui.interfaces_old"
+			@closed="gui.interfaces_old = false"
+		></interfaces_old>
+		
 		<interfaces
-			:opened="interfaces"
-			@closed="interfaces = false"
+			:opened="gui.interfaces"
+			@closed="gui.interfaces = false"
 		></interfaces>
 	</div>
 	`,
     data: () => ({
-        interfaces: false,
+		gui: {
+			interfaces_old: false,
+			interfaces: false
+		},
         batch: ''
 	}),
 	computed: {

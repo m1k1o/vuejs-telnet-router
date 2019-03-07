@@ -1,4 +1,4 @@
-Vue.component('interfaces', {
+Vue.component('interfaces_old', {
     props: ['opened'],
     watch: { 
         opened: function(newVal, oldVal) {
@@ -15,7 +15,8 @@ Vue.component('interfaces', {
         visible: false,
         build: [],
 
-        interfaces: {}
+        data: {},
+        iface: { ip: '', mask: '255.255.255.0' }
     }),
     template: `
         <modal v-if="visible" v-on:close="Close()" style="color:black;">
@@ -24,20 +25,18 @@ Vue.component('interfaces', {
             </div>
             <div slot="body" class="form-horizontal">
                 <table class="table" v-if="build.length == 0">
-                    <template v-for="(interfaces, device_name) in interfaces">
+                    <template v-for="(device, device_name) in devices">
                         <tr>
-                            <td colspan="4">
-                                <h3 class="mb-0">{{ device_name }}</h3>
+                            <td colspan="3">
+                                <h3 class="mb-0">{{ device_name }} <small>{{ device.host }}:{{ device.port }} ({{ device.status }})</small></h3>
                             </td>
+                            <td><button class="btn btn-success" @click="AddIface(device_name)" tabindex="-1">+</button></td>
                         </tr>
-                        <tr v-for="(iface, iface_name) in interfaces" class="my-2" :class="{
-                            'table-success': iface.running,
-                            'table-secondary': !iface.ip_address
-                        }">
+                        <tr v-for="(iface, iface_name) in data[device_name]" class="my-2">
                             <td><span class="form-control-plaintext">{{ iface_name }}</span></td>
-                            <td><input class="form-control" type="text" v-model="iface.ip_address" placeholder="IP"></td>
+                            <td><input class="form-control" type="text" v-model="iface.ip" placeholder="IP"></td>
                             <td><input class="form-control" type="text" v-model="iface.mask" placeholder="Mask"></td>
-                            <td><input type="checkbox" value="1" v-model="iface.running" class="form-check-input"> Running</td>
+                            <td><button class="btn btn-danger" @click="$delete(data[device_name], iface_name)" tabindex="-1">X</button></td>
                         </tr>
                     </template>
                 </table>
@@ -55,26 +54,48 @@ Vue.component('interfaces', {
         </modal>
     `,
 	computed: {
-		running_config() {
-			return this.$store.state.configs.running_config;
+		devices() {
+			return this.$store.state.devices;
+		},
+		ports() {
+			return this.$store.state.gns.ports;
+		},
+		running() {
+			return this.$store.state.running;
 		}
 	},
     methods: {
+        AddIface(device_name) {
+            var iface_name = prompt("What name do you wish new interface should have?", "fa0/3");
+            if (iface_name != null) {
+                this.$set(this.data[device_name], iface_name, { ...this.iface });
+            }
+        },
         Open(){
             document.body.style.overflow = "hidden";
             
-            var interfaces = {};
-            Object.keys(this.running_config).map((key, index) => {
-                interfaces[key] = this.running_config[key].interfaces;
-            });
-            
-            this.$set(this, 'interfaces', interfaces);
-            this.build = [];
+            var ifaces = {};
+            for (const device in this.devices) {
+                if(device in this.ports) {
+                    ifaces[device] = {};
+                    for (const port of this.ports[device]) {
+                        ifaces[device][port] = { ...this.iface };
+                    }
+                } else {
+                    ifaces[device] = {
+                        "fa0/0": { ...this.iface },
+                        "fa0/1": { ...this.iface }
+                    };
+                }
+            }
+
+            this.$set(this, 'data', ifaces);
             this.visible = true;
         },
         Close(){
             document.body.style.overflow = "auto";
             this.visible = false;
+            this.build = [];
             this.$emit("closed");
         },
         Action(){
@@ -83,19 +104,19 @@ Vue.component('interfaces', {
         },
         Build(){
             var result = [];
-            for (const device_name in this.interfaces) {
-                var device_ifaces = this.interfaces[device_name];
+            for (const device_name in this.data) {
+                var device_ifaces = this.data[device_name];
 
                 var cmds = "";
                 for (const iface_name in device_ifaces) {
                     var iface = device_ifaces[iface_name];
 
-                    if(!iface.ip_address || !iface.mask) continue;
+                    if(!iface.ip || !iface.mask) continue;
 
                     cmds += 
                         "int "+iface_name+"\n"+
-                        "ip add "+iface.ip_address+" "+iface.mask+"\n"+
-                        (!iface.running ? '' : 'no ')+"sh\n" +
+                        "ip add "+iface.ip+" "+iface.mask+"\n"+
+                        "no sh\n" +
                         "exit\n";
                 }
 

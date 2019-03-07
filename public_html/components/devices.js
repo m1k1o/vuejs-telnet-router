@@ -152,7 +152,8 @@ Vue.component('devices', {
             data: () => ({
                 visible: false,
                 processing: false,
-                error: false
+                error: false,
+                show: null
             }),
             template: `
                 <modal v-if="visible" v-on:close="Close()">
@@ -168,10 +169,12 @@ Vue.component('devices', {
                                 <li v-for="(config, device) in devices">
                                     <button @click="Load(type, device)">Load</button>
                                     <button @click="Update(type, device)">Update</button>
-                                    {{ device }}
+                                    <span @click="show = config">{{ device }}</span>
                                 </li>
                             </ul>
                         </div>
+
+                        <pre>{{show}}</pre>
                     </div>
                 </modal>
             `,
