@@ -163,6 +163,7 @@ Vue.component('devices', {
                     <div slot="body" class="form-horizontal">
                         <div class="alert alert-info" v-if="processing">Processing...</div>
                         <div class="alert alert-danger" v-if="error">{{ error }}</div>
+                        <button @click="Load()">Load all</button>
                         <div v-for="(devices, type) in configs">
                             <h2> {{ type }} <button @click="Load(type)">Load</button><button @click="Update(type)">Update</button></h2>
                             <ul>

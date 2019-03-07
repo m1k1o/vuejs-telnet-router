@@ -216,12 +216,13 @@ const store = new Vuex.Store({
         },
 
         CONFIGS({commit, getters}, {action, type, device}) {
+            var url = getters.http_url + "/configs/";
             if(typeof type === 'undefined' || type === null) {
-                return;
+                url += action;
             } else if(typeof device === 'undefined' || device === null) {
-                var url = getters.http_url + "/configs/"+action+"/"+type;
+                url += action+"/"+type;
             } else {
-                var url = getters.http_url + "/configs/"+action+"/"+type+"/"+device;
+                url += action+"/"+type+"/"+device;
             }
 
             return fetch(url)

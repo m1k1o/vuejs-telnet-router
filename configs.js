@@ -41,30 +41,17 @@ function Config(devices) {
         });
     }
     
-    this.load = function(type, device_name){
-        if(device_name in configs.running_config) {
-            return new Promise(resolve => {
-                resolve(configs[type][device_name]);
-            })
+    this.load = function(type = null, device_name = null){
+        if(type == null) return configs;
+        if(device_name == null) return configs[type];
+
+        if(device_name in configs[type]) {
+            return configs[type][device_name];
         }
 
-        return this.update(type, device_name);
-    }
-
-    this.load_all = function(type){
-        var device_names = devices.get_names();
-
-        var promises = [];
-        for(let dev of device_names) {
-            promises.push(this.load(type, dev));
-        }
-        
-        return Promise.all(promises).then(() => {
-            return configs[type];
-        });
+        return null;
     }
     
-
     return this;
 }
 

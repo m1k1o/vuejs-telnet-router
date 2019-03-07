@@ -70,7 +70,7 @@ http.on('request', async (req, res) => {
     }
 
     // Get update|load configs
-    if(null !== (m = req.url.match(/^\/configs\/(update|load)\/(.*?)(?:\/(.*))?\/?$/))) {
+    if(null !== (m = req.url.match(/^\/configs\/(update|load)(?:\/(.*?)){0,2}\/?$/))) {
         CROS();
         
         if(m[1] == "update") {
@@ -79,23 +79,22 @@ http.on('request', async (req, res) => {
             } else {
                 var promise = configs.update_all(m[2]);
             }
+
+            promise.then((data) => {
+                res.writeHead(200);
+                res.end(JSON.stringify(data, null, 4));
+            }, (err) => {
+                res.writeHead(400);
+                res.end(JSON.stringify(err));
+            });
         }
         
         if(m[1] == "load") {
-            if(m[3]) {
-                var promise = configs.load(m[2], m[3]);
-            } else {
-                var promise = configs.load_all(m[2]);
-            }
-        }
+            var data = configs.load(m[2], m[3]);
 
-        promise.then((data) => {
             res.writeHead(200);
             res.end(JSON.stringify(data, null, 4));
-        }, (err) => {
-            res.writeHead(400);
-            res.end(JSON.stringify(err));
-        });
+        }
 
         return ;
     }
