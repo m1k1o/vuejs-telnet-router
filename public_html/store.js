@@ -23,6 +23,10 @@ const store = new Vuex.Store({
                 pass: ""
             },
             ports: {}
+        },
+
+        configs: {
+            running_config: {}
         }
     },
     mutations: {
@@ -78,6 +82,17 @@ const store = new Vuex.Store({
 
         PORTS_PUT(state, data) {
             Vue.set(state.gns, 'ports', data)
+        },
+
+        // Configs
+        SET_CONFIG(state, {type, device, data}) {
+            if(typeof type === 'undefined' || type === null) {
+                Vue.set(state, 'configs', data)
+            } else if(typeof device === 'undefined' || device === null) {
+                Vue.set(state.configs, type, data)
+            } else {
+                Vue.set(state.configs[type], device, data)
+            }
         },
     },
     getters: {
@@ -193,7 +208,31 @@ const store = new Vuex.Store({
                 password: state.gns.login.pass
             })
 
-            return fetch(url).then((res) => res.json())
+            return fetch(url)
+            .then(function(response) {
+                if (!response.ok) throw Error(response.statusText);
+                return response;
+            }).then((res) => res.json())
+        },
+
+        CONFIGS({commit, getters}, {action, type, device}) {
+            if(typeof type === 'undefined' || type === null) {
+                return;
+            } else if(typeof device === 'undefined' || device === null) {
+                var url = getters.http_url + "/configs/"+action+"/"+type;
+            } else {
+                var url = getters.http_url + "/configs/"+action+"/"+type+"/"+device;
+            }
+
+            return fetch(url)
+                .then(function(response) {
+                    if (!response.ok) throw Error(response.statusText);
+                    return response;
+                })
+                .then((res) => res.json())
+                .then((data) => {
+                    commit('SET_CONFIG', {type, device, data})
+                })
         }
     }
 })

@@ -3,6 +3,7 @@ Vue.component('devices', {
         input: "",
 
         new_device_modal: false,
+        configs_modal: false,
         gns_load_modal: false
     }),
     template: `
@@ -17,12 +18,18 @@ Vue.component('devices', {
             <div class="mb-2">
                 <button @click="new_device_modal = true">+ Add Device</button>
                 <button @click="AutoAdd()">+ Auto Add</button>
+                <button @click="configs_modal = true">Configs</button>
                 <button @click="gns_load_modal = true">+ Load from GNS</button>
             </div>
 
             <device_modal
                 :opened="new_device_modal"
                 @closed="new_device_modal = false"
+            />
+
+            <configs_modal
+                :opened="configs_modal"
+                @closed="configs_modal = false"
             />
 
             <gns_load_modal
@@ -34,7 +41,10 @@ Vue.component('devices', {
 	computed: {
 		devices() {
 			return this.$store.state.devices;
-		}
+		},
+		configs() {
+			return this.$store.state.configs;
+		},
     },
     methods: {
         AutoAdd(total = null) {
@@ -126,6 +136,79 @@ Vue.component('devices', {
                 }
             }
         },
+        'configs_modal': {
+            props: ['opened'],
+            watch: { 
+                opened: function(newVal, oldVal) {
+                    if(!oldVal && newVal) {
+                        this.Open();
+                    }
+                    
+                    if(oldVal && !newVal) {
+                        this.Close();
+                    }
+                }
+            },
+            data: () => ({
+                visible: false,
+                processing: false,
+                error: false
+            }),
+            template: `
+                <modal v-if="visible" v-on:close="Close()">
+                    <div slot="header">
+                        <h1 class="mb-3">  Configs </h1>
+                    </div>
+                    <div slot="body" class="form-horizontal">
+                        <div class="alert alert-info" v-if="processing">Processing...</div>
+                        <div class="alert alert-danger" v-if="error">{{ error }}</div>
+                        <div v-for="(devices, type) in configs">
+                            <h2> {{ type }} <button @click="Load(type)">Load</button><button @click="Update(type)">Update</button></h2>
+                            <ul>
+                                <li v-for="(config, device) in devices">
+                                    <button @click="Load(type, device)">Load</button>
+                                    <button @click="Update(type, device)">Update</button>
+                                    {{ device }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </modal>
+            `,
+            computed: {
+                devices() {
+                    return this.$store.state.devices;
+                },
+                configs() {
+                    return this.$store.state.configs;
+                },
+            },
+            methods: {
+                Open(){
+                    this.visible = true;
+                },
+                Close(){
+                    this.visible = false;
+                    this.$emit("closed");
+                },
+                Action(action, type, device){
+                    this.processing = true;
+                    this.error = false;
+                    
+                    return store.dispatch('CONFIGS', {action, type, device}).catch((err) => {
+                        this.error = String(err);
+                    }).finally(() => {
+                        this.processing = false;
+                    })
+                },
+                Update(type, device){
+                    return this.Action("update", type, device);
+                },
+                Load(type, device){
+                    return this.Action("load", type, device);
+                }
+            }
+        },
         'gns_load_modal': {
             props: ['opened'],
             watch: { 
@@ -188,7 +271,7 @@ Vue.component('devices', {
                         <div slot="body" class="form-horizontal">
                             <div class="text-center">
                                 <template v-for="{name, status, project_id} in projects">
-                                    <button class="btn btn-secondary m-2" @click="Action(project_id)">{{ name }} ({{ status }})</button>
+                                    <button class="btn m-2" :class="status == 'opened' ? 'btn-success' : 'btn-outline-success'" @click="Action(project_id)">{{ name }} ({{ status }})</button>
                                 </template>
                             </div>
                         </div>

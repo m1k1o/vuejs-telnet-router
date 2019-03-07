@@ -7,16 +7,32 @@ var port = process.argv[2] || 8090;
 var http = require("http").createServer();
 var io = require("socket.io")(http);
 var devices = require('./devices.js')(io);
-
-var rc2json = require('./rc2json.js');
+var configs = require('./configs.js')(devices);
 
 http.listen(port, function () {
   console.log("Starting server on port %s", port);
 });
 
 http.on('request', async (req, res) => {
+    let m;
+
+    // Set CORS headers
+    var CROS = () => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Request-Method', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+        res.setHeader('Access-Control-Allow-Headers', '*');
+    }
+
+    if (req.method === 'OPTIONS' ) {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
+    
     // Is Execute
     if(/^\/execute/.test(req.url) && req.method === 'POST') {
+        CROS();
         let deivce_name = req.url.replace(/^\/execute\/(.*)\/?/, "$1");
         
         let cmd = '';
@@ -38,12 +54,13 @@ http.on('request', async (req, res) => {
 
     // Get running config
     if(/^\/running_config/.test(req.url)) {
+        CROS();
         let deivce_name = req.url.replace(/^\/running_config\/(.*)\/?/, "$1");
         
         //deivce_name.connection.write("end\r\n");
-        devices.execute(deivce_name, "show running-config").then((running_config) => {
+        configs.get_rc(deivce_name).then((running_config) => {
             res.writeHead(200);
-            res.end(JSON.stringify(rc2json(running_config, true), null, 4));
+            res.end(JSON.stringify(running_config, null, 4));
         }, (err) => {
             res.writeHead(400);
             res.end(String(err));
@@ -52,21 +69,42 @@ http.on('request', async (req, res) => {
         return ;
     }
 
-    // Is GNS Api
-    if(/^\/gns_api/.test(req.url)) {
-        var query = url.parse(req.url, true).query;
-
-        // Set CORS headers
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Request-Method', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-        res.setHeader('Access-Control-Allow-Headers', '*');
-        if (req.method === 'OPTIONS' ) {
-            res.writeHead(200);
-            res.end();
-            return;
+    // Get update|load configs
+    if(null !== (m = req.url.match(/^\/configs\/(update|load)\/(.*?)(?:\/(.*))?\/?$/))) {
+        CROS();
+        
+        if(m[1] == "update") {
+            if(m[3]) {
+                var promise = configs.update(m[2], m[3]);
+            } else {
+                var promise = configs.update_all(m[2]);
+            }
         }
         
+        if(m[1] == "load") {
+            if(m[3]) {
+                var promise = configs.load(m[2], m[3]);
+            } else {
+                var promise = configs.load_all(m[2]);
+            }
+        }
+
+        promise.then((data) => {
+            res.writeHead(200);
+            res.end(JSON.stringify(data, null, 4));
+        }, (err) => {
+            res.writeHead(400);
+            res.end(JSON.stringify(err));
+        });
+
+        return ;
+    }
+
+    // Is GNS Api
+    if(/^\/gns_api/.test(req.url)) {
+        CROS();
+        var query = url.parse(req.url, true).query;
+
         res.writeHead(200, {'Content-Type': 'text/json'});
 
         try {
@@ -138,7 +176,7 @@ io.sockets.on("connection", function(socket) {
 
         // Get specific
         for (var name of to) {
-            var device = devices.get(name, true);
+            var device = devices.by_name(name, true);
             if(device) {
                 for (var cmd of cmds) {
                     device.connection.write(cmd.trim()+'\r\n');

@@ -64,7 +64,7 @@ module.exports = function(io) {
         }
     }
 
-    this.get = function(name, running = false){
+    this.by_name = function(name, running = false){
         if(!(name in devices)) {
             return null;
         }
@@ -95,13 +95,13 @@ module.exports = function(io) {
 
     this.execute = function(deivce_name, cmd){
         return new Promise((resolve, reject) => {
-            let device = this.get(deivce_name, true);
+            let device = this.by_name(deivce_name, true);
             if(!device) {
                 reject("device "+deivce_name+" not found");
                 return ;
             }
 
-            device.connection.write(cmd.trim()+'\r\n');
+            device.connection.write(String(cmd).trim()+'\r\n');
             
             let response = "";
             let timeout = null;
