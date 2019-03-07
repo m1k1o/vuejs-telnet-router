@@ -1,6 +1,6 @@
 'use strict'
 
-var Telnet = require('telnet-client')
+var net = require('net')
 var axios = require('axios');
 var url = require('url');
 
@@ -55,17 +55,17 @@ http.on('request', async (req, res) => {
 
 var devices = {};
 function Deivce_Add(name, host, port){
-    var connection = new Telnet()
-    var params = {
-        host,
-        port,
-        shellPrompt: '#',
-        timeout: 500,
-        ors: '\r\n',
-        waitfor: '\n',
-        pageSeparator: '--More--'
-    };
-    
+    var params = {host, port};
+    var connection = net.createConnection(params);
+
+    connection.setTimeout(3000, () => {
+        !devices[name] || (devices[name].status = 'timeout');
+
+        if (connection._connecting === true) {
+            connection.destroy()
+        }
+    });
+
     connection.on("data", function(data){
         io.to(name).emit("terminal_data", ''+data);
     });
@@ -80,7 +80,8 @@ function Deivce_Add(name, host, port){
         Devices();
     })
 
-    connection.on('ready', function(prompt) {
+    connection.on('ready', function() {
+        connection.write('\r\n')
         !devices[name] || (devices[name].status = 'ready');
         Devices();
     })
@@ -93,13 +94,15 @@ function Deivce_Add(name, host, port){
         status: 'waiting...'
     };
 
-    return connection.connect(params);
+    return connection;
 }
 
 function Deivce_Remove(name){
     if(name in devices) {
-        return devices[name].connection.end().then(() => {
+        return new Promise(resolve => {
+            devices[name].connection.end()
             delete devices[name];
+            resolve()
         })
     }
 }
@@ -186,7 +189,7 @@ io.sockets.on("connection", function(socket) {
             var device = Deivce_Get(name, true);
             if(device) {
                 for (var cmd of cmds) {
-                    device.connection.send(cmd.trim()+'\r\n');
+                    device.connection.write(cmd.trim()+'\r\n');
                 }
             }
         }
