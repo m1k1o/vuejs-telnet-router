@@ -190,7 +190,8 @@ Vue.component('gns', {
                 }
             },
             data: () => ({
-                visible: false
+                visible: false,
+                action: false
             }),
             template: `
                 <modal v-if="visible" v-on:close="Close()" style="color:black;" :full_width="true">
@@ -198,7 +199,12 @@ Vue.component('gns', {
                         <h1 class="mb-3"> GNS Project </h1>
                     </div>
                     <div slot="body" class="form-horizontal">
-                        <div style="width:100%;height:100%;max-height: calc(100vh - 202px);overflow:auto;" ref="gns_canvas">
+                        <div style="position:absolute;z-index:20;background:white;max-height:100%;overflow:auto;">
+                            <button v-if="action" @click="action = false">CLOSE</button>
+                            <component v-if="action" :data="action.data" :is="action.is" />
+                        </div>
+
+                        <div style="user-select:none;width:100%;height:100%;max-height: calc(100vh - 202px);overflow:auto;" ref="gns_canvas">
                             <div :style="{
                                 width: project.scene_width + 'px',
                                 height: project.scene_height + 'px',
@@ -218,18 +224,32 @@ Vue.component('gns', {
                                             width: link.length+'px'
                                         }"
                                         :title="LinkTooltip(link)"
+                                        @click="action = {
+                                            is: 'gns_link',
+                                            data: link
+                                        }"
                                         class="link"
                                         :class="link.type"
                                     ></div>
                                 </template>
                                 
-                                <div v-for="node in nodes" :style="{
-                                    width: node.width + 'px',
-                                    height: node.height + 'px',
-                                    top: (project.scene_height/2)+node.y + 'px',
-                                    left: (project.scene_width/2)+node.x + 'px',
-                                    zIndex: 10
-                                }" style="position:absolute;" class="router">
+                                <div
+                                    v-for="node in nodes"
+                                    :style="{
+                                        width: node.width + 'px',
+                                        height: node.height + 'px',
+                                        top: (project.scene_height/2)+node.y + 'px',
+                                        left: (project.scene_width/2)+node.x + 'px',
+                                        zIndex: 10
+                                    }"
+                                    @click="action = {
+                                        is: 'gns_node',
+                                        data: node
+                                    }"
+                                    :title="NodeTooltip(node)"
+                                    style="position:absolute;"
+                                    class="router"
+                                >
                                     <div :style="'position:absolute;top:'+node.label.y+'px;left:'+node.label.x+'px;'+node.label.style">
                                         {{ node.label.text }}
                                     </div>
@@ -240,8 +260,11 @@ Vue.component('gns', {
                 </modal>
             `,
             computed: {
+                is_running_config(){
+                    return this.$store.getters.is_running_config;
+                },
                 running_config() {
-                    return this.$store.state.configs.running_config || null;
+                    return Object.keys(this.$store.state.configs.running_config).length == 0 ? null : this.$store.state.configs.running_config;
                 },
                 project() {
                     return this.$store.state.gns.project;
@@ -357,7 +380,7 @@ Vue.component('gns', {
                 },
                 LinkTooltip(link) {
                     var running_config = this.running_config;
-                    if(running_config == null) {
+                    if(!this.is_running_config) {
                         return 'No running config found...';
                     }
 
@@ -373,6 +396,120 @@ Vue.component('gns', {
                         'IP: ' + dev1.ip_address + ' ' + dev1.mask + '\n' +
                         (dev1.running ? 'Running' : 'Not running') + '\n' +
                         '';
+                },
+                NodeTooltip(node) {
+                    var running_config = this.running_config;
+                    if(!this.is_running_config) {
+                        return 'No running config found...';
+                    }
+
+                    var rc = running_config[node.name]
+                    var router = rc.router;
+                    
+                    var str = '';
+                    for (const int in rc.interfaces) {
+                        console.log(int);
+                        if(/loopback/i.test(int)) {
+                            str += 
+                                int + '\n' +
+                                'IP: ' + rc.interfaces[int].ip_address + ' ' + rc.interfaces[int].mask + '\n' +
+                                (rc.interfaces[int].running ? 'Running' : 'Not running') + '\n' +
+                                '\n';
+                        }
+                    }
+                    /*
+                    if('bgp' in router) {
+                        str += '\nBGP '+router.bgp.as_number+(router.bgp.router_id ? ' ('+router.bgp.router_id+')' : '')+'\n';
+                        
+                        str += 'Networks:\n';
+                        for (const network of router.bgp.networks) {
+                            str += '  '+network.ip+' '+network.mask+'\n';
+                        }
+
+                        str += 'Neighbors:\n';
+                        for (const id in router.bgp.neighbors) {
+                            str += '  '+id+' ('+router.bgp.neighbors[id]["remote-as"]+')\n';
+                        }
+                    }
+
+                    if('ospf' in router) {
+                        str += '\nOSPF '+router.ospf.process_id+'\n';
+                        
+                        str += 'Networks:\n';
+                        for (const network of router.ospf.networks) {
+                            str += '  '+network.ip+' '+network.mask+' ('+network.area+')\n';
+                        }
+                    }
+                    */
+                    return str +
+                        'Router: ' + Object.keys(router).join(", ");
+                }
+            },
+            components: {
+                'gns_link': {
+                    props: ['data'],
+                    template: `
+                        <div v-if="!is_running_config">
+                            <h2> {{ link0.name }} </h2>
+                            <pre>no running config...</pre>
+                            <h2> {{ link1.name }} </h2>
+                            <pre>no running config...</pre>
+                        </div>
+                        <div v-else>
+                            <h2> {{ link0.name }} </h2>
+                            <pre>{{ dev0 }}</pre>
+                            <h2> {{ link1.name }} </h2>
+                            <pre>{{ dev1 }}</pre>
+                        </div>
+                    `,
+                    computed: {
+                        is_running_config(){
+                            return this.$store.getters.is_running_config;
+                        },
+                        running_config() {
+                            return Object.keys(this.$store.state.configs.running_config).length == 0 ? null : this.$store.state.configs.running_config;
+                        },
+
+                        link0() {
+                            return this.data.devices[0];
+                        },
+                        link1() {
+                            return this.data.devices[1];
+                        },
+
+                        dev0() {
+                            return this.running_config[this.link0.name].interfaces[this.link0.port];
+                        },
+                        dev1() {
+                            return this.running_config[this.link1.name].interfaces[this.link1.port];
+                        }
+                    }
+                },
+                'gns_node': {
+                    props: ['data'],
+                    template: `
+                        <div v-if="!is_running_config">
+                            <h2> {{ data.name }} </h2>
+                            <pre>{{ data.ports }}</pre>
+                        </div>
+                        <div v-else>
+                            <pre>{{ config.router }}</pre>
+                        </div>
+                    `,
+                    computed: {
+                        is_running_config(){
+                            return this.$store.getters.is_running_config;
+                        },
+                        running_config() {
+                            return this.$store.state.configs.running_config;
+                        },
+
+                        config() {
+                            return this.running_config[this.data.name];
+                        },
+                    },
+                    mounted() {
+                    }
                 }
             }
         }

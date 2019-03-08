@@ -125,7 +125,10 @@ const store = new Vuex.Store({
             return state.gns.connection.url
                 .replace(/^http(s?)\:\/\//, "ws$1://" + state.gns.connection.name + ":" + state.gns.connection.pass + "@")
                 .replace(/\/$/, "");
-        }
+        },
+		is_running_config(state){
+			return state.configs.running_config !== null && Object.keys(state.configs.running_config).length != 0
+		}
     },
     actions: {
         // GLOBAL
