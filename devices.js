@@ -13,18 +13,18 @@ module.exports = function(io) {
 
         connection.on('error', (error) => {
             !devices[name] || (devices[name].status = 'error');
-            this.advertise();
+            this.advertise(null, name);
         })
 
         connection.on('close', () => {
             !devices[name] || (devices[name].status = 'closed');
-            this.advertise();
+            this.advertise(null, name);
         })
 
         connection.on('ready', () => {
             connection.write('\r\n')
             !devices[name] || (devices[name].status = 'ready');
-            this.advertise();
+            this.advertise(null, name);
         })
 
         devices[name] = {
@@ -48,13 +48,17 @@ module.exports = function(io) {
         }
     }
 
-    this.advertise = function(socket = null){
+    this.advertise = function(socket = null, dev_name = null){
         var obj = {};
         for (const device in devices) {
             if (devices.hasOwnProperty(device)) {
                 var {name, host, port, status} = devices[device];
                 obj[device] = {name, host, port, status}
             }
+        }
+
+        if(dev_name !== null) {
+            obj = {[dev_name]: obj[dev_name] || false};
         }
 
         if(socket === null) {

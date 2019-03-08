@@ -158,13 +158,16 @@ io.sockets.on("connection", function(socket) {
 	});
 	socket.on("device_add", ({name, host, port}) => {
 		devices.add(name, host, port);
-        devices.advertise(socket);
+        devices.advertise(socket, name);
 	});
 	socket.on("device_remove", (name) => {
 		devices.remove(name).then(() => {
-            devices.advertise(socket);
+            devices.advertise(socket, name);
         });
-	});
+    });
+    
+    // Confgis
+    socket.emit("configs", configs.load());
     
     // Send Data
 	socket.on("execute", function({cmds, to}) {

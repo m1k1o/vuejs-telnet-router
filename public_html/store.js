@@ -71,7 +71,13 @@ const store = new Vuex.Store({
 
         // DEVICES
         DEVICES(state, devices) {
-            Vue.set(state, 'devices', devices)
+            for (const key in devices) {
+                if (devices[key] == false) {
+                    Vue.delete(state.devices, key);
+                } else {
+                    Vue.set(state.devices, key, devices[key]);
+                }
+            }
         },
 
         // GNS
@@ -135,6 +141,8 @@ const store = new Vuex.Store({
 			state.connection.socket.on("terminal_device", (device) => commit('TERMINAL_DEVICE', device));
             state.connection.socket.on("terminal_data", (data) => commit('TERMINAL_DATA', data));
             
+            state.connection.socket.on("configs", (data) => commit('SET_CONFIG', {data}));
+
 			state.connection.socket.on("devices", (devices) => commit('DEVICES', devices));
 			state.connection.socket.on("connect", () => commit('RUNNING', true));
 			state.connection.socket.on("disconnect", () => commit('RUNNING', false));
