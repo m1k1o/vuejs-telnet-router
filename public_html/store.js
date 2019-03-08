@@ -76,13 +76,10 @@ const store = new Vuex.Store({
 
         // DEVICES
         DEVICES(state, devices) {
-            for (const key in devices) {
-                if (devices[key] == false) {
-                    Vue.delete(state.devices, key);
-                } else {
-                    Vue.set(state.devices, key, devices[key]);
-                }
-            }
+            Vue.set(state, 'devices', devices);
+        },
+        DEVICE_STATUS(state, {device, status}) {
+            state.devices[device].status = status;
         },
 
         // GNS

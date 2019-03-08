@@ -13,18 +13,18 @@ module.exports = function(io) {
 
         connection.on('error', (error) => {
             !devices[name] || (devices[name].status = 'error');
-            this.advertise(null, name);
+            io.sockets.emit("device_status", { device: name, status: devices[name].status});
         })
 
         connection.on('close', () => {
             !devices[name] || (devices[name].status = 'closed');
-            this.advertise(null, name);
+            io.sockets.emit("device_status", { device: name, status: devices[name].status});
         })
 
         connection.on('ready', () => {
             connection.write('\r\n')
             !devices[name] || (devices[name].status = 'ready');
-            this.advertise(null, name);
+            io.sockets.emit("device_status", { device: name, status: devices[name].status});
         })
 
         devices[name] = {
@@ -39,16 +39,18 @@ module.exports = function(io) {
     }
 
     this.remove = function(name){
-        if(name in devices) {
-            return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
+            if(name in devices) {
                 devices[name].connection.end()
                 delete devices[name];
                 resolve()
-            })
-        }
+            } else {
+                reject();
+            }
+        })
     }
-
-    this.advertise = function(socket = null, dev_name = null){
+    
+    this.advertise = function(socket = null){
         var obj = {};
         for (const device in devices) {
             if (devices.hasOwnProperty(device)) {
@@ -56,11 +58,7 @@ module.exports = function(io) {
                 obj[device] = {name, host, port, status}
             }
         }
-
-        if(dev_name !== null) {
-            obj = {[dev_name]: obj[dev_name] || false};
-        }
-
+        
         if(socket === null) {
             io.sockets.emit("devices", obj);
         } else {

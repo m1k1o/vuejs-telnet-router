@@ -158,11 +158,11 @@ io.sockets.on("connection", function(socket) {
 	});
 	socket.on("device_add", ({name, host, port}) => {
 		devices.add(name, host, port);
-        devices.advertise(socket, name);
+        devices.advertise(socket);
 	});
 	socket.on("device_remove", (name) => {
 		devices.remove(name).then(() => {
-            devices.advertise(socket, name);
+            devices.advertise(socket);
         });
     });
     
