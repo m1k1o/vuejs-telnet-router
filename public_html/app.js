@@ -20,6 +20,8 @@ Vue.component('telnet-router', {
 				<ul>
 					<li><button @click="gui.interfaces_old = true">Interfaces (old)</button></li>
 					<li><button @click="gui.interfaces = true" :disabled="!is_running_config">Interfaces</button> <span v-if="!is_running_config">Needs running config...</span></li>
+					<li><button @click="gui.gns_project = true" :disabled="!is_gns">GNS Project</button> <span v-if="!is_gns">Needs GNS data...</span></li>
+
 				</ul>
 			</div>
 			<div class="col-6">
@@ -27,6 +29,11 @@ Vue.component('telnet-router', {
 			</div>
 		</div>
 		
+		<gns_project
+			:opened="gui.gns_project"
+			@closed="gui.gns_project = false"
+		></gns_project>
+
 		<interfaces_old
 			:opened="gui.interfaces_old"
 			@closed="gui.interfaces_old = false"
@@ -41,7 +48,8 @@ Vue.component('telnet-router', {
     data: () => ({
 		gui: {
 			interfaces_old: false,
-			interfaces: false
+			interfaces: false,
+			gns_project: false
 		},
         batch: ''
 	}),
@@ -57,6 +65,9 @@ Vue.component('telnet-router', {
 		},
 		is_running_config(){
 			return Object.keys(this.configs.running_config).length > 0;
+		},
+		is_gns(){
+			return Object.keys(this.$store.state.gns.project).length > 0;
 		}
 	},
     methods: {

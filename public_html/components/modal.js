@@ -1,10 +1,11 @@
 // register modal component
 Vue.component('modal', {
+    props: ['full_width'],
     template: `
         <transition name="modal" @keydown.esc="Close()">
             <div style="color:black;">
                 <div class="modal fade show" style="display:block;overflow:auto;" v-on:click.self="Close()">
-                    <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-dialog modal-lg" role="document" :style="full_width ? 'max-width:100%;margin:0;' : ''">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <slot name="header">

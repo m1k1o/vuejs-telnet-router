@@ -33,3 +33,8 @@
     background: white;
     color: black;
 }
+#telnet-router .router {
+    background-image: url(router.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
