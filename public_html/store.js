@@ -374,6 +374,13 @@ const store = new Vuex.Store({
                                 data: state.gns.project_links.filter(x => x.link_id != data.event.link_id)
                             });
                             break;
+                        
+                        case "project.updated":
+                            commit("GNS_PUT", {
+                                key: 'project',
+                                data: data.event
+                            });
+                            break;
                     }
                     console.log(data);
                 };

@@ -210,7 +210,7 @@ Vue.component('gns', {
                                 height: project.scene_height + 'px',
                             }" style="position:relative;">
                                 <template v-for="link in links">
-                                    <template v-for="label in link.labels">
+                                    <template v-for="label in link.labels" v-if="project.show_interface_labels">
                                         <div :style="'position:absolute;top:'+label.y+'px;left:'+label.x+'px;'+label.style">
                                             {{ label.text }}
                                         </div>
