@@ -117,7 +117,7 @@ http.on('request', async (req, res) => {
             res.end(JSON.stringify({
                 error: false,
                 data: axios_resp.data
-            }));
+            }, null, 4));
         } catch (error) {
             res.end(JSON.stringify({
                 error: true,

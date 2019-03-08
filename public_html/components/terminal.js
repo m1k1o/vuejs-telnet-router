@@ -3,7 +3,7 @@ Vue.component('terminal', {
         input: ""
     }),
     template: `
-        <div>
+        <div stlye="position:fixed;width:calc(50% - 30px);">
             <ul class="nav nav-pills nav-fill my-2">
                 <li class="nav-item mx-2" v-for="(device, name) in devices">
                     <a

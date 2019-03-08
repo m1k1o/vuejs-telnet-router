@@ -19,7 +19,7 @@ Vue.component('telnet-router', {
 				<h1>GUI</h1>
 				<ul>
 					<li><button @click="gui.interfaces_old = true">Interfaces (old)</button></li>
-					<li><button @click="gui.interfaces = true">Interfaces</button></li>
+					<li><button @click="gui.interfaces = true" :disabled="!is_running_config">Interfaces</button> <span v-if="!is_running_config">Needs running config...</span></li>
 				</ul>
 			</div>
 			<div class="col-6">
@@ -51,6 +51,12 @@ Vue.component('telnet-router', {
 		},
 		running() {
 			return this.$store.state.running;
+		},
+		configs() {
+			return this.$store.state.configs;
+		},
+		is_running_config(){
+			return Object.keys(this.configs.running_config).length > 0;
 		}
 	},
     methods: {
