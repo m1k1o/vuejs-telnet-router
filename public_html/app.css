@@ -38,3 +38,52 @@
     background-repeat: no-repeat;
     background-size: contain;
 }
+#telnet-router .link {
+    position: absolute;
+    z-index: 1;
+    height: 4px;
+    background: black;
+    -webkit-transform-origin: left top;
+            transform-origin: left top;
+    border-radius: 10px;
+    background-clip: content-box;
+    -webkit-box-sizing: content-box;
+            box-sizing: content-box;
+    padding: 10px 0;
+}
+#telnet-router .link:hover {
+    cursor: pointer;
+    background-color: red;
+}
+#telnet-router .link.serial {
+    background: none;
+}
+#telnet-router .link.serial:before {
+    content: "";
+    width: calc(50% - 2px);
+    height: 4px;
+    border-top: 4px solid rgb(161, 0, 0);
+    border-right: 4px solid rgb(161, 0, 0);
+    position: absolute;
+    left: 0;
+    /*transform: rotate(-0.1rad);*/
+    transform-origin: left top;
+    box-sizing: content-box;
+}
+#telnet-router .link.serial:after {
+    content: "";
+    width: calc(50% - 2px);
+    height: 4px;
+    border-bottom: 4px solid rgb(161, 0, 0);
+    border-left: 4px solid rgb(161, 0, 0);
+    position: absolute;
+    right: 0;
+    /*transform: rotate(-0.1rad) translateY(-100%);*/
+    transform-origin: right top;
+    box-sizing: content-box;
+}
+
+#telnet-router .link.serial:hover:before,
+#telnet-router .link.serial:hover:after {
+    border-color: red;
+}
