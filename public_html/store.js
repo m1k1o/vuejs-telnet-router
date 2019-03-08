@@ -24,6 +24,8 @@ const store = new Vuex.Store({
                 project_id: "",
                 auto: false
             },
+            compute: false,
+
             ports: {},
             links: {},
             
@@ -35,7 +37,7 @@ const store = new Vuex.Store({
         },
 
         configs: {
-            running_config: {}
+            running_config: null
         }
     },
     mutations: {
@@ -117,6 +119,11 @@ const store = new Vuex.Store({
         http_url(state){
             return state.connection.url
                 .replace(/^ws(s?)\:\/\//, "http$1://")
+                .replace(/\/$/, "");
+        },
+        gns_ws_url(state){
+            return state.gns.connection.url
+                .replace(/^http(s?)\:\/\//, "ws$1://" + state.gns.connection.name + ":" + state.gns.connection.pass + "@")
                 .replace(/\/$/, "");
         }
     },
@@ -271,7 +278,7 @@ const store = new Vuex.Store({
                 return projects;
             })
         },
-        GNS_CONNECT({commit, state, dispatch}, project_id) {
+        GNS_CONNECT({commit, state, dispatch, getters}, project_id) {
             commit("GNS_CONNECTION", { project_id });
             commit("GNS_PUT", {
                 key: 'project',
@@ -289,7 +296,86 @@ const store = new Vuex.Store({
                         throw new Error(res.message)
                     }
                 }
-                
+                                
+                var socket = new WebSocket(getters.gns_ws_url + "/v2/projects/" + project_id + "/notifications/ws");
+                socket.onopen = function (event) {
+                    console.log("Connected");
+                };
+
+                socket.onmessage = function (resp) {
+                    var data = JSON.parse(resp.data);
+                    switch(data.action) {
+                        case "ping":
+                        case "compute.updated":
+                            commit("GNS_PUT", {
+                                key: 'compute',
+                                data: {
+                                    memory_usage_percent: data.event.memory_usage_percent,
+                                    cpu_usage_percent: data.event.cpu_usage_percent
+                                }
+                            });
+                            break;
+
+                        case "node.created":
+                            commit("GNS_PUT", {
+                                key: 'project_nodes',
+                                data: [ ...state.gns.project_nodes, data.event ]
+                            });
+                            break;
+
+                        case "node.updated":
+                            var { event } = data;
+                            var new_nodes = state.gns.project_nodes.map(x =>{
+                                if(x.node_id == event.node_id) {
+                                    return event;
+                                }
+                                return x;
+                            });
+                            commit("GNS_PUT", {
+                                key: 'project_nodes',
+                                data: new_nodes
+                            });
+                            break;
+
+                        case "node.deleted":
+                            commit("GNS_PUT", {
+                                key: 'project_nodes',
+                                data: state.gns.project_nodes.filter(x => x.node_id != data.event.node_id)
+                            });
+                            break;
+
+                        case "link.created":
+                            commit("GNS_PUT", {
+                                key: 'project_links',
+                                data: [ ...state.gns.project_links, data.event ]
+                            });
+                            break;
+
+                        case "link.updated":
+                            var { event } = data;
+                            var new_links = state.gns.project_links.map(x =>{
+                                if(x.link_id == event.link_id) {
+                                    return event;
+                                }
+                                return x;
+                            });
+                            commit("GNS_PUT", {
+                                key: 'project_links',
+                                data: new_links
+                            });
+                            break;
+                            
+                        case "link.deleted":
+                            commit("GNS_PUT", {
+                                key: 'project_links',
+                                data: state.gns.project_links.filter(x => x.link_id != data.event.link_id)
+                            });
+                            break;
+                    }
+                    console.log(data);
+                };
+                state.gns.socket = socket;
+
                 var project_nodes = responses[0].data;
                 var project_links = responses[1].data;
 

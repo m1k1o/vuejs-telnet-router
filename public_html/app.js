@@ -55,7 +55,7 @@ Vue.component('telnet-router', {
 			return this.$store.state.configs;
 		},
 		is_running_config(){
-			return Object.keys(this.configs.running_config).length > 0;
+			return this.configs.running_config !== null
 		}
 	},
     methods: {
