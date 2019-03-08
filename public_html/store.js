@@ -22,7 +22,8 @@ const store = new Vuex.Store({
                 name: "admin",
                 pass: ""
             },
-            ports: {}
+            ports: {},
+            links: {}
         },
 
         configs: {
@@ -86,8 +87,8 @@ const store = new Vuex.Store({
             localStorage.setItem('gns_login', JSON.stringify(login));
         },
 
-        PORTS_PUT(state, data) {
-            Vue.set(state.gns, 'ports', data)
+        GNS_PUT(state, {key, data}) {
+            Vue.set(state.gns, key, data)
         },
 
         // Configs

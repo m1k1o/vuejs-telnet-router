@@ -233,7 +233,8 @@ Vue.component('devices', {
 
                 login: {},
                 projects: {},
-                project_nodes: {}
+                project_nodes: {},
+                project_links: {}
             }),
             template: `
                 <modal v-if="visible" v-on:close="Close()">
@@ -347,11 +348,22 @@ Vue.component('devices', {
                             this.$set(this, 'project_nodes', res.data)
                             this.step = 3;
                         })
+                        this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/links").then((res) => {
+                            if(res.error === true) {
+                                this.error = res.message;
+                                return;
+                            }
+
+                            this.$set(this, 'project_links', res.data)
+                            this.step = 3;
+                        })
                     }
                     if(this.step == 3) {
                         // DEVICES
                         var devs = [];
                         var ports = {};
+                        
+                        var node_ports = {};
                         for(var node of this.project_nodes) {
                             if (node.console_type == "telnet") {
                                 devs.push({
@@ -363,10 +375,37 @@ Vue.component('devices', {
                                 ports[node.name] = node.ports.map(port => {
                                     return port.short_name;
                                 })
+
+                                node_ports[node.node_id] = {};
+                                for (const port of node.ports) {
+                                    node_ports[node.node_id][port.adapter_number + "_" + port.port_number] =  {
+                                        port: port.name,
+                                        device: node.name
+                                    };
+                                }
                             }
                         }
-                        
-                        this.$store.commit("PORTS_PUT", ports);
+                        this.$store.commit("GNS_PUT", {
+                            key: 'ports',
+                            data: ports
+                        });
+
+                        // LINKS
+                        var links = [];
+                        for(var link of this.project_links) {
+                            //link.link_id
+                            //link.link_type
+                            var nodes = link.nodes.map(node => {
+                                return node_ports[node.node_id][node.adapter_number + "_" + node.port_number];
+                            })
+
+                            links.push(nodes);
+                        }
+                        this.$store.commit("GNS_PUT", {
+                            key: 'links',
+                            data: links
+                        });
+
                         this.$store.dispatch("DEVICES_PUT", devs).then(() => {
                             this.Close()
                         })
