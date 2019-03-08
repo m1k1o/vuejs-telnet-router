@@ -287,9 +287,10 @@ Vue.component('devices', {
 
                     <template v-if="step == 3">
                         <div slot="header">
-                            <h1 class="mb-3"> Found devices  </h1>
+                            <h1 class="mb-3"> Parsed data  </h1>
                         </div>
                         <div slot="body" class="form-horizontal">
+                            <h5>Devices</h5>
                             <ul>
                                 <li v-for="node in project_nodes" v-if="node.console_type == 'telnet'">
                                     {{ node.name }} @ {{ node.console_host }}:{{ node.console }}
@@ -339,22 +340,34 @@ Vue.component('devices', {
                         return ;
                     }
                     if(this.step == 2) {
-                        this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/nodes").then((res) => {
-                            if(res.error === true) {
-                                this.error = res.message;
-                                return;
+                        this.$store.commit("GNS_PUT", {
+                            key: 'project',
+                            data: this.projects.find(p => p.project_id == input)
+                        });
+
+                        Promise.all([
+                            this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/nodes"),
+                            this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/links")
+                        ]).then((responses) => {
+                            // Catch errors
+                            for (const res of responses) {
+                                if(res.error === true) {
+                                    this.error = res.message;
+                                    return;
+                                }
                             }
 
-                            this.$set(this, 'project_nodes', res.data)
-                            this.step = 3;
-                        })
-                        this.$store.dispatch("GNS_API", "/v2/projects/" + input + "/links").then((res) => {
-                            if(res.error === true) {
-                                this.error = res.message;
-                                return;
-                            }
-
-                            this.$set(this, 'project_links', res.data)
+                            this.$set(this, 'project_nodes', responses[0].data)
+                            this.$set(this, 'project_links', responses[1].data)
+                            this.$store.commit("GNS_PUT", {
+                                key: 'project_nodes',
+                                data: this.project_nodes
+                            });
+                            this.$store.commit("GNS_PUT", {
+                                key: 'project_links',
+                                data: this.project_links
+                            });
+        
                             this.step = 3;
                         })
                     }

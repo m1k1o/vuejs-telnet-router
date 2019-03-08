@@ -23,7 +23,11 @@ const store = new Vuex.Store({
                 pass: ""
             },
             ports: {},
-            links: {}
+            links: {},
+            
+            project: {},
+            project_nodes: {},
+            project_links: {}
         },
 
         configs: {
