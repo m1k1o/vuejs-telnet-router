@@ -16,12 +16,14 @@ Vue.component('telnet-router', {
 					<button @click="SendBatch()">Send to All</button>
 				</div>
 				
+				<h1>GNS</h1>
+				<gns />
+
 				<h1>GUI</h1>
 				<ul>
 					<li><button @click="gui.interfaces_old = true">Interfaces (old)</button></li>
 					<li><button @click="gui.interfaces = true" :disabled="!is_running_config">Interfaces</button> <span v-if="!is_running_config">Needs running config...</span></li>
 					<li><button @click="gui.gns_project = true" :disabled="!is_gns">GNS Project</button> <span v-if="!is_gns">Needs GNS data...</span></li>
-
 				</ul>
 			</div>
 			<div class="col-6">

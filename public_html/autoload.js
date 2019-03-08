@@ -21,6 +21,7 @@ async function vuejs_telnet_router(Initialize, base_path = "") {
         'components/connect.js',
         'components/devices.js',
         'components/terminal.js',
+        'components/gns.js',
         
         'components/interfaces.js',
         'components/gns_project.js',
