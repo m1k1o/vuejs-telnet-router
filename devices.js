@@ -12,18 +12,22 @@ module.exports = function(io) {
         });
 
         connection.on('error', (error) => {
-            !devices[name] || (devices[name].status = 'error');
-            io.sockets.emit("device_status", { device: name, status: devices[name].status});
+            if(devices[name]) {
+                devices[name].status = 'error';
+                io.sockets.emit("device_status", { device: name, status: devices[name].status});
+            }
         })
 
         connection.on('close', () => {
-            !devices[name] || (devices[name].status = 'closed');
-            io.sockets.emit("device_status", { device: name, status: devices[name].status});
+            if(devices[name]) {
+                devices[name].status = 'closed';
+                io.sockets.emit("device_status", { device: name, status: devices[name].status});
+            }
         })
 
         connection.on('ready', () => {
             connection.write('\r\n')
-            !devices[name] || (devices[name].status = 'ready');
+            devices[name].status = 'ready';
             io.sockets.emit("device_status", { device: name, status: devices[name].status});
         })
 
@@ -42,8 +46,10 @@ module.exports = function(io) {
         return new Promise((resolve, reject) => {
             if(name in devices) {
                 devices[name].connection.end()
-                delete devices[name];
-                resolve()
+                setTimeout(() => {
+                    delete devices[name];
+                    resolve()
+                }, 500)
             } else {
                 reject();
             }
@@ -80,14 +86,29 @@ module.exports = function(io) {
     }
 
     this.put = async function(input){
-        // Remove all
-        for(var name in devices) {
-            await this.remove(name)
-        }
-        
+        var all_saved = this.get_names();
         for(var dev of input) {
             var {name, host, port} = dev;
-            this.add(name, host, port);
+
+            // Check if new
+            var saved = this.by_name(dev.name);
+            if(saved == null) {
+                this.add(name, host, port);
+                continue;
+            }
+            
+            // Remove
+            all_saved.splice(all_saved.indexOf(name), 1);
+
+            if(saved.host != host || saved.port != port) {
+                await this.remove(name)
+                this.add(name, host, port);
+            }
+        }
+
+        // Remove Rest
+        for(var name in all_saved) {
+            await this.remove(name)
         }
     }
 
