@@ -17,17 +17,21 @@ const store = new Vuex.Store({
         devices: {},
 
         gns: {
-            login: {
+            connection: {
                 url: "http://127.0.0.1:3080/",
                 name: "admin",
-                pass: ""
+                pass: "",
+                project_id: "",
+                auto: false
             },
             ports: {},
             links: {},
             
-            project: {},
-            project_nodes: {},
-            project_links: {}
+            projects: false,
+
+            project: false,
+            project_nodes: [],
+            project_links: []
         },
 
         configs: {
@@ -35,6 +39,7 @@ const store = new Vuex.Store({
         }
     },
     mutations: {
+        // GLOBAL
         RUNNING(state, running) {
             Vue.set(state, 'running', running)
         },
@@ -79,20 +84,25 @@ const store = new Vuex.Store({
             Vue.set(state, 'devices', devices);
         },
         DEVICE_STATUS(state, {device, status}) {
+            if(device in state.devices)
             state.devices[device].status = status;
         },
 
         // GNS
-        GNS_LOGIN(state, login) {
-            Vue.set(state.gns, 'login', login)
-            localStorage.setItem('gns_login', JSON.stringify(login));
+        GNS_CONNECTION(state, connection) {
+            for (const key in connection) {
+                if (connection.hasOwnProperty(key) && state.gns.connection.hasOwnProperty(key) && state.gns.connection[key] != connection[key]) {
+                    Vue.set(state.gns.connection, key, connection[key]);
+                }
+            }
+            
+            localStorage.setItem('gns_connection', JSON.stringify(state.gns.connection));
         },
-
         GNS_PUT(state, {key, data}) {
             Vue.set(state.gns, key, data)
         },
 
-        // Configs
+        // CONFIGS
         SET_CONFIG(state, {type, device, data}) {
             if(typeof type === 'undefined' || type === null) {
                 Vue.set(state, 'configs', data)
@@ -101,7 +111,7 @@ const store = new Vuex.Store({
             } else {
                 Vue.set(state.configs[type], device, data)
             }
-        },
+        }
     },
     getters: {
         http_url(state){
@@ -111,6 +121,7 @@ const store = new Vuex.Store({
         }
     },
     actions: {
+        // GLOBAL
         INIT({commit, dispatch}){
             if(localStorage.getItem('connection')) {
                 var data = JSON.parse(localStorage.getItem('connection'));
@@ -121,9 +132,19 @@ const store = new Vuex.Store({
                 }
             }
             
-            if(localStorage.getItem('gns_login')) {
-                var {url, name, pass} = JSON.parse(localStorage.getItem('gns_login'));
-                commit('GNS_LOGIN', {url, name, pass})
+            if(localStorage.getItem('gns_connection')) {
+                var data = JSON.parse(localStorage.getItem('gns_connection'));
+                commit('GNS_CONNECTION', data)
+
+                if(data.auto) {
+                    dispatch('GNS_PROJECTS')
+                    .then(() => {
+                        if(data.project_id) {
+                            return dispatch('GNS_CONNECT', data.project_id)
+                        }
+                    })
+                    .then(() => {}, () => {})
+                }
             }
         },
         CONNECT({state, commit}, url = null) {
@@ -146,6 +167,7 @@ const store = new Vuex.Store({
             state.connection.socket.on("configs", (data) => commit('SET_CONFIG', {data}));
 
 			state.connection.socket.on("devices", (devices) => commit('DEVICES', devices));
+			state.connection.socket.on("device_status", ({device, status}) => commit('DEVICE_STATUS', {device, status}));
 			state.connection.socket.on("connect", () => commit('RUNNING', true));
 			state.connection.socket.on("disconnect", () => commit('RUNNING', false));
         },
@@ -157,12 +179,16 @@ const store = new Vuex.Store({
             
 			return state.connection.socket.emit(service, data);
         },
+
+        // TERMINAL
         TERMINAL_SET({dispatch}, device) {
             return dispatch('EMIT', {
                 service: "terminal_set",
                 data: device
             })
         },
+
+        // DEVICES
         EXECUTE({dispatch}, input = null) {
             if(Array.isArray(input)) {
                 return (async function(){
@@ -209,13 +235,15 @@ const store = new Vuex.Store({
                 data: id
             })
         },
+
+        // GNS
         GNS_API({state, getters}, path) {
             var url = new URL(getters.http_url + "/gns_api")
             
             url.search = new URLSearchParams({
-                url: state.gns.login.url.replace(/\/$/, "") + path,
-                username: state.gns.login.name,
-                password: state.gns.login.pass
+                url: state.gns.connection.url.replace(/\/$/, "") + path,
+                username: state.gns.connection.name,
+                password: state.gns.connection.pass
             })
 
             return fetch(url)
@@ -224,7 +252,114 @@ const store = new Vuex.Store({
                 return response;
             }).then((res) => res.json())
         },
+        GNS_PROJECTS({dispatch, commit}) {
+            commit("GNS_PUT", {
+                key: 'projects',
+                data: false
+            });
 
+            return dispatch("GNS_API", "/v2/projects").then((projects) => {
+                if(projects.error === true) {
+                    throw new Error(projects.message)
+                }
+
+                commit("GNS_PUT", {
+                    key: 'projects',
+                    data: projects.data
+                });
+
+                return projects;
+            })
+        },
+        GNS_CONNECT({commit, state, dispatch}, project_id) {
+            commit("GNS_CONNECTION", { project_id });
+            commit("GNS_PUT", {
+                key: 'project',
+                data: state.gns.projects.find(p => p.project_id == project_id)
+            });
+
+            // GET NODES & LINKS
+            return Promise.all([
+                dispatch("GNS_API", "/v2/projects/" + project_id + "/nodes"),
+                dispatch("GNS_API", "/v2/projects/" + project_id + "/links")
+            ]).then((responses) => {
+                // Catch errors
+                for (const res of responses) {
+                    if(res.error === true) {
+                        throw new Error(res.message)
+                    }
+                }
+                
+                var project_nodes = responses[0].data;
+                var project_links = responses[1].data;
+
+                commit("GNS_PUT", {
+                    key: 'project_nodes',
+                    data: project_nodes
+                });
+
+                commit("GNS_PUT", {
+                    key: 'project_links',
+                    data: project_links
+                });
+                
+                // DEVICES & PORTS
+                var devs = [];
+                var ports = {};
+                
+                var node_ports = {};
+                for(var node of project_nodes) {
+                    if (node.console_type == "telnet") {
+                        devs.push({
+                            name: node.name,
+                            host: node.console_host,
+                            port: node.console
+                        })
+
+                        ports[node.name] = node.ports.map(port => {
+                            return port.short_name;
+                        })
+
+                        node_ports[node.node_id] = {};
+                        for (const port of node.ports) {
+                            node_ports[node.node_id][port.adapter_number + "_" + port.port_number] =  {
+                                port: port.name,
+                                device: node.name
+                            };
+                        }
+                    }
+                }
+                commit("GNS_PUT", {
+                    key: 'ports',
+                    data: ports
+                });
+
+                // LINKS
+                var links = [];
+                for(var link of project_links) {
+                    var nodes = link.nodes.map(node => {
+                        return node_ports[node.node_id][node.adapter_number + "_" + node.port_number];
+                    })
+
+                    links.push(nodes);
+                }
+                commit("GNS_PUT", {
+                    key: 'links',
+                    data: links
+                });
+
+                return dispatch("DEVICES_PUT", devs);
+            })
+        },
+        GNS_DISCONNECT({commit}) {
+            commit("GNS_CONNECTION", { project_id: null, auto: false });
+            commit("GNS_PUT", {
+                key: 'project',
+                data: false
+            });
+        },
+
+        // CONFIGS
         CONFIGS({commit, getters}, {action, type, device}) {
             var url = getters.http_url + "/configs/";
             if(typeof type === 'undefined' || type === null) {

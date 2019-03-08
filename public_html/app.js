@@ -16,7 +16,6 @@ Vue.component('telnet-router', {
 					<button @click="SendBatch()">Send to All</button>
 				</div>
 				
-				<h1>GNS</h1>
 				<gns />
 
 				<h1>GUI</h1>
