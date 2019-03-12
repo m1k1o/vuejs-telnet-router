@@ -269,6 +269,38 @@ function rc2json(running_config, debug = false) {
                 state_data.auto_summary = false;
                 continue;
             }
+
+            // Redistribude
+            if(null !== (m = line.match(/^\s*redistribute (?:(static|connected)|(ospf|eigrp) (.*?))(?: metric (.*?)(?: route-map (.*?))?)?$/))) {
+                var redistribute = {};
+                if(typeof m[1] !== 'undefined') {
+                    redistribute.type = m[1];
+                }
+
+                if(typeof m[2] !== 'undefined') {
+                    redistribute.type = m[2];
+
+                    if(m[2] == "ospf") {
+                        redistribute.process_id = m[3]
+                    }
+
+                    if(m[2] == "eigrp") {
+                        redistribute.as_number = m[3]
+                    }
+                }
+
+                if(typeof m[4] !== 'undefined') {
+                    redistribute.metric = m[4];
+                }
+
+                if(typeof m[5] !== 'undefined') {
+                    redistribute.route_map = m[5]
+                }
+                
+                if(typeof state_data.redistribute === 'undefined') state_data.redistribute = [];
+                state_data.redistribute.push(redistribute);
+                continue;
+            }
         }
 
         else if(state == "router bgp") {
