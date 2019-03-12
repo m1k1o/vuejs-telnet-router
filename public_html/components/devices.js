@@ -7,17 +7,17 @@ Vue.component('devices', {
     }),
     template: `
         <div>
-            <ul v-for="(device, name) in devices">
-                <li>
-                    <button @click="Remove(name)">X</button>
+            <ul>
+                <li v-for="(device, name) in devices" class="py-1">
+                    <button class="btn btn-light btn-sm" @click="Remove(name)">X</button>
                     {{ name }} @ {{ device.host }}:{{ device.port }} ({{ device.status }})
                 </li>
             </ul>
 
             <div class="mb-2">
-                <button @click="new_device_modal = true">+ Add Device</button>
-                <button @click="AutoAdd()">+ Auto Add</button>
-                <button @click="configs_modal = true">Configs</button>
+                <button class="btn btn-light" @click="new_device_modal = true">+ Add Device</button>
+                <button class="btn btn-light" @click="AutoAdd()">+ Auto Add</button>
+                <button class="btn btn-light" @click="configs_modal = true">Configs</button>
             </div>
 
             <device_modal
@@ -151,24 +151,30 @@ Vue.component('devices', {
             template: `
                 <modal v-if="visible" v-on:close="Close()">
                     <div slot="header">
-                        <h1 class="mb-3">  Configs </h1>
+                        <h1 class="mb-0"> Configs <button class="btn btn-info" @click="Load()">Load all</button></h1>
                     </div>
                     <div slot="body" class="form-horizontal">
                         <div class="alert alert-info" v-if="processing">Processing...</div>
                         <div class="alert alert-danger" v-if="error">{{ error }}</div>
-                        <button @click="Load()">Load all</button>
+                        
                         <div v-for="(devices, type) in configs">
-                            <h2> {{ type }} <button @click="Load(type)">Load</button><button @click="Update(type)">Update</button></h2>
+                            <div class="py-2">
+                                <div class="float-left mr-1">
+                                    <button class="btn btn-info btn-sm my-1" @click="Load(type)">Load</button>
+                                    <button class="btn btn-success btn-sm my-1" @click="Update(type)">Update</button>
+                                </div>
+                                <h2>{{ type }}</h2>
+                            </div>
                             <ul>
-                                <li v-for="(config, device) in devices">
-                                    <button @click="Load(type, device)">Load</button>
-                                    <button @click="Update(type, device)">Update</button>
-                                    <span @click="show = config">{{ device }}</span>
+                                <li v-for="(config, device) in devices" class="py-1">
+                                    <button class="btn btn-info btn-sm" @click="Load(type, device)">Load</button>
+                                    <button class="btn btn-success btn-sm" @click="Update(type, device)">Update</button>
+                                    <span @click="show = (show == config ? undefined : config)">{{ device }}</span>
                                 </li>
                             </ul>
                         </div>
 
-                        <pre>{{show}}</pre>
+                        <pre style="max-height: 50vh;overflow:auto;">{{show}}</pre>
                     </div>
                 </modal>
             `,
