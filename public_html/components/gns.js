@@ -129,13 +129,11 @@ Vue.component('gns', {
             `,
             methods: {
                 Open(){
-                    document.body.style.overflow = "hidden";
                     this.step = 1;
                     this.connection = this.$store.state.gns.connection;
                     this.visible = true;
                 },
                 Close(){
-                    document.body.style.overflow = "auto";
                     this.visible = false;
                     this.$emit("closed");
                 },

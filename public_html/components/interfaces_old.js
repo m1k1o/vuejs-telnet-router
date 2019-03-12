@@ -72,8 +72,6 @@ Vue.component('interfaces_old', {
             }
         },
         Open(){
-            document.body.style.overflow = "hidden";
-            
             var ifaces = {};
             for (const device in this.devices) {
                 if(device in this.ports) {
@@ -93,7 +91,6 @@ Vue.component('interfaces_old', {
             this.visible = true;
         },
         Close(){
-            document.body.style.overflow = "auto";
             this.visible = false;
             this.build = [];
             this.$emit("closed");

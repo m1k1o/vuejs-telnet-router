@@ -44,12 +44,10 @@ Vue.component('gns_node', {
     `,
     methods: {
         Open(node){
-            document.body.style.overflow = "hidden";
             this.visible = true;
             this.node = node;
         },
         Close(){
-            document.body.style.overflow = "auto";
             this.visible = false;
             this.$emit("closed");
         }

@@ -1,4 +1,3 @@
-// register modal component
 Vue.component('modal', {
     props: ['full_width'],
     template: `
@@ -11,7 +10,7 @@ Vue.component('modal', {
                                 <slot name="header">
                                     <h5 class="modal-title">Modal title</h5>
                                 </slot>
-                                <button type="button" class="close" v-on:click.self="Close()">
+                                <button type="button" class="close" v-on:click="Close()">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
@@ -38,6 +37,7 @@ Vue.component('modal', {
         }
     },
     mounted() {
+        document.body.style.overflow = "hidden";
         window.addEventListener('keydown', (event) => {
             // If  ESC key was pressed...
             if (event.keyCode === 27) {
@@ -45,5 +45,8 @@ Vue.component('modal', {
                 this.Close();
             }
         });
+    },
+    beforeDestroy() {
+        document.body.style.overflow = "auto";
     }
 })

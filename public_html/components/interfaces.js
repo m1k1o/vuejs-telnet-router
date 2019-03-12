@@ -61,8 +61,6 @@ Vue.component('interfaces', {
 	},
     methods: {
         Open(){
-            document.body.style.overflow = "hidden";
-            
             var interfaces = {};
             Object.keys(this.running_config).map((key, index) => {
                 interfaces[key] = this.running_config[key].interfaces;
@@ -73,7 +71,6 @@ Vue.component('interfaces', {
             this.visible = true;
         },
         Close(){
-            document.body.style.overflow = "auto";
             this.visible = false;
             this.$emit("closed");
         },

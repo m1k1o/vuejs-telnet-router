@@ -55,12 +55,10 @@ Vue.component('gns_link', {
     `,
     methods: {
         Open(link){
-            document.body.style.overflow = "hidden";
             this.visible = true;
             this.link = link;
         },
         Close(){
-            document.body.style.overflow = "auto";
             this.visible = false;
             this.$emit("closed");
         }
