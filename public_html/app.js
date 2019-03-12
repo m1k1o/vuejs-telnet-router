@@ -22,7 +22,7 @@ Vue.component('telnet-router', {
 				
 				<gns />
 				
-				<button class="btn btn-light" @click="gui.interfaces = true" :disabled="!is_running_config">Interfaces</button> <span v-if="!is_running_config">Needs running config...</span>
+				<button class="btn btn-light" @click="gui.interfaces = true" :disabled="!is_running_config">IP Interfaces</button> <span v-if="!is_running_config">Needs running config...</span>
 			</div>
 			<div class="col-6">
 				<terminal />

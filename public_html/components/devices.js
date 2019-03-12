@@ -174,7 +174,7 @@ Vue.component('devices', {
                             </ul>
                         </div>
 
-                        <pre style="max-height: 50vh;overflow:auto;">{{show}}</pre>
+                        <pre v-if="show"><span v-for="line in show.debug" :class="String(line).startsWith('_________________ ') ? 'text-danger' : 'text-success'">{{ line.replace(/^_________________ /, '') }}\n</span></pre>
                     </div>
                 </modal>
             `,
