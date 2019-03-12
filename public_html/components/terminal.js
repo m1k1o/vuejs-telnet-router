@@ -24,8 +24,11 @@ Vue.component('terminal', {
                     placeholder="Enter command here"
                 />
                 <div>
-                    <button @click="Send('\x03')">CTRL+C</button>
-                    <button class="float-right" @click="Send()">SEND</button>
+                    <button class="btn btn-light" @click="Send()">SEND</button>
+                    <span class="float-right">
+                        <button class="btn btn-light btn-sm" @click="Send('\x03')">CTRL + C</button>
+                        <button class="btn btn-light btn-sm" @click="Send('?')">?</button>
+                    </span>
                 </div>
             </template>
         </div>
