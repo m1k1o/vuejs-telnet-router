@@ -27,6 +27,7 @@ function rc2json(running_config, debug = false) {
             state = "router eigrp";
             state_data = {
                 as_number: m[1],
+                auto_summary: true,
                 networks: []
             };
 
@@ -84,6 +85,25 @@ function rc2json(running_config, debug = false) {
             result.prefix_lists[m[1]][m[2]] = obj;
             continue;
         }
+        
+        // Distribute list for eigrp|rip|ospf
+        if(/router (eigrp|rip|ospf)/.test(state) && null !== (m = line.match(/^\s*distribute-list (?:(route-map|gateway|prefix) )?(.*?) (in|out)(?: (.*))?$/))) {
+            var distribute_list = {
+                type: 'access-list'
+            };
+
+            if(typeof m[1] !== 'undefined') {
+                distribute_list.type = m[1];
+            }
+
+            distribute_list.name = m[2];
+            distribute_list.direction = m[3];
+            distribute_list.interface = m[4];
+            
+            if(typeof state_data.distribute_list === 'undefined') state_data.distribute_list = [];
+            state_data.distribute_list.push(distribute_list);
+            continue;
+        }
 
         /* STATES */
         if(state == "start") {
@@ -137,6 +157,50 @@ function rc2json(running_config, debug = false) {
                     ip: m[1],
                     mask: m[2]
                 });
+                continue;
+            }
+
+            // No auto-summary
+            if(null !== (m = line.match(/^\s*no auto-summary$/))) {
+                state_data.auto_summary = false;
+                continue;
+            }
+            
+            // Redistribude
+            if(null !== (m = line.match(/^\s*redistribute (?:(static|connected|rip)|(ospf|eigrp) (.*?))(?: metric (.*?) (.*?) (.*?) (.*?) (.*?)(?: route-map (.*?))?)?$/))) {
+                var redistribute = {};
+                if(typeof m[1] !== 'undefined') {
+                    redistribute.type = m[1];
+                }
+
+                if(typeof m[2] !== 'undefined') {
+                    redistribute.type = m[2];
+
+                    if(m[2] == "ospf") {
+                        redistribute.process_id = m[3]
+                    }
+
+                    if(m[2] == "eigrp") {
+                        redistribute.as_number = m[3]
+                    }
+                }
+
+                if(typeof m[4] !== 'undefined') {
+                    redistribute.metric = {
+                        bandwidth: m[4], // <1-4294967295>  Bandwidth metric in Kbits per second
+                        delay: m[5], // <0-4294967295>  EIGRP delay metric, in 10 microsecond units
+                        reliability: m[6], // <0-255>  EIGRP reliability metric where 255 is 100% reliable
+                        effective_bandwidth: m[7], // <1-255>  EIGRP Effective bandwidth metric (Loading) where 255 is 100% loaded
+                        mtu: m[8], // <1-65535>  EIGRP MTU of the path
+                    }
+                }
+
+                if(typeof m[9] !== 'undefined') {
+                    redistribute.route_map = m[9]
+                }
+                
+                if(typeof state_data.redistribute === 'undefined') state_data.redistribute = [];
+                state_data.redistribute.push(redistribute);
                 continue;
             }
         }
@@ -214,6 +278,8 @@ function rc2json(running_config, debug = false) {
     }
 
     !debug || console.log(JSON.stringify(lines, null, 4));
+    
+    result.debug = lines;
     return result;
 }
 
