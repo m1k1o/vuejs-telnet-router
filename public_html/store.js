@@ -134,7 +134,59 @@ const store = new Vuex.Store({
         },
 		is_running_config(state){
 			return state.configs.running_config !== null && Object.keys(state.configs.running_config).length != 0
-		}
+		},
+        gns_nodes(state) {
+            var nodes = {};
+
+            // NODES
+            for(var key in state.gns.project_nodes) {
+                let node = state.gns.project_nodes[key];
+
+                nodes[node.node_id] = {
+                    gns: node
+                };
+            }
+            
+            // LINKS
+            var node_ports = {};
+            for(var link of state.gns.project_links) {
+                let node0 = link.nodes[0];
+                let node1 = link.nodes[1];
+
+                node_ports[node0.node_id+"_"+node0.adapter_number+"_"+node0.port_number] = nodes[node1.node_id]
+                node_ports[node1.node_id+"_"+node1.adapter_number+"_"+node1.port_number] = nodes[node0.node_id]
+            }
+
+            // NODES
+            for(var node_id in nodes) {
+                let node = nodes[node_id];
+
+                let links = []
+                for(var index in node.gns.ports) {
+                    let port = node.gns.ports[index]
+                    let key = node_id+"_"+port.adapter_number+"_"+port.port_number;
+
+                    if(key in node_ports) {
+                        links.push({
+                            port,
+                            node: node_ports[key]
+                        })
+                    }
+                }
+                
+                let configs = {};
+                for(const key in state.configs) {
+                    if (node.name in state.configs[key]) {
+                        configs[key] = state.configs[key][node.name]
+                    }
+                }
+                
+                node.links = links
+                node.configs = configs
+            }
+            
+            return nodes;
+        }
     },
     actions: {
         // GLOBAL
