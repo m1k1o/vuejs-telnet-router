@@ -39,10 +39,23 @@ function rc2json(running_config, debug = false) {
             state = "router ospf";
             state_data = {
                 process_id: m[1],
+                auto_summary: true,
                 networks: []
             };
 
             result.router["ospf"] = state_data;
+            continue;
+        }
+
+        else if(null !== (m = line.match(/^router rip$/))) {
+            state = "router rip";
+            state_data = {
+                version: 1,
+                auto_summary: true,
+                networks: []
+            };
+
+            result.router["rip"] = state_data;
             continue;
         }
 
@@ -86,6 +99,19 @@ function rc2json(running_config, debug = false) {
             continue;
         }
         
+        else if(null !== (m = line.match(/^ip access-list (standard|extended) (.*)$/))) {
+            state = "access-list";
+            state_data = {
+                type: m[1],
+                rules: []
+            };
+
+
+            if(typeof result.access_lists === 'undefined') result.access_lists = {};
+            result.access_lists[m[2]] = state_data;
+            continue;
+        }
+
         // Distribute list for eigrp|rip|ospf
         if(/router (eigrp|rip|ospf)/.test(state) && null !== (m = line.match(/^\s*distribute-list (?:(route-map|gateway|prefix) )?(.*?) (in|out)(?: (.*))?$/))) {
             var distribute_list = {
@@ -159,13 +185,13 @@ function rc2json(running_config, debug = false) {
                 });
                 continue;
             }
-
+            
             // No auto-summary
             if(null !== (m = line.match(/^\s*no auto-summary$/))) {
                 state_data.auto_summary = false;
                 continue;
             }
-            
+
             // Redistribude
             if(null !== (m = line.match(/^\s*redistribute (?:(static|connected|rip)|(ospf|eigrp) (.*?))(?: metric (.*?) (.*?) (.*?) (.*?) (.*?)(?: route-map (.*?))?)?$/))) {
                 var redistribute = {};
@@ -213,6 +239,34 @@ function rc2json(running_config, debug = false) {
                     mask: m[2],
                     area: m[3]
                 });
+                continue;
+            }
+            
+            // No auto-summary
+            if(null !== (m = line.match(/^\s*no auto-summary$/))) {
+                state_data.auto_summary = false;
+                continue;
+            }
+        }
+
+        else if(state == "router rip") {
+            // Network
+            if(null !== (m = line.match(/^\s*network (.*)$/))) {
+                state_data.networks.push({
+                    ip: m[1]
+                });
+                continue;
+            }
+            
+            // Version
+            if(null !== (m = line.match(/^\s*version (.*)$/))) {
+                state_data.version = m[1];
+                continue;
+            }
+
+            // No auto-summary
+            if(null !== (m = line.match(/^\s*no auto-summary$/))) {
+                state_data.auto_summary = false;
                 continue;
             }
         }
@@ -263,6 +317,56 @@ function rc2json(running_config, debug = false) {
 
                 if(typeof state_data.matches === 'undefined') state_data.matches = [];
                 state_data.matches.push(obj)
+                continue;
+            }
+
+            // Set
+            if(null !== (m = line.match(/^\s*set (?:ip )?(.*) (.*)$/))) {
+                if(typeof state_data.set === 'undefined') state_data.set = {};
+                state_data.set[m[1]] = m[2];
+                continue;
+            }
+        }
+
+        else if(state == "access-list") {
+            // Match
+            if(null !== (m = line.match(/^\s*(permit|deny) (.*) (?:(object-group|host) (.*?)|any|(.*?) (.*?)) (?:(object-group|host) (.*?)|any|(.*?) (.*?))$/))) {
+                // Src
+                if (typeof m[3] != 'undefined' && typeof m[4] != 'undefined') {
+                    var src = {
+                        [m[3]]: m[4]
+                    }
+                } else if (typeof m[5] != 'undefined' && typeof m[6] != 'undefined') {
+                    var src = {
+                        ip: m[5],
+                        wildcard: m[6],
+                    }
+                } else {
+                    var src = "any";
+                }
+
+                // Dst
+                if (typeof m[7] != 'undefined' && typeof m[8] != 'undefined') {
+                    var dst = {
+                        [m[7]]: m[8]
+                    }
+                } else if (typeof m[9] != 'undefined' && typeof m[10] != 'undefined') {
+                    var dst = {
+                        ip: m[9],
+                        wildcard: m[10],
+                    }
+                } else {
+                    var dst = "any";
+                }
+
+                var rule = {
+                    type: m[1],
+                    protocol: m[2],
+                    src,
+                    dst
+                };
+                
+                state_data.rules.push(rule)
                 continue;
             }
 
