@@ -1,14 +1,20 @@
 Vue.component('gns_project', {
     data: () => ({
+        gns_link: false,
+        gns_node: false,
         action: false
     }),
     template: `
         <div class="form-horizontal bg-white text-dark">
-            <div style="position:absolute;z-index:20;background:white;max-height:100vh;overflow:auto;">
-                <button v-if="action" @click="action = false">CLOSE</button>
-                <component v-if="action" :data="action.data" :is="action.is" />
-            </div>
-
+            <gns_link
+                :opened="gns_link"
+                @closed="gns_link = false"
+            />
+            <gns_node
+                :opened="gns_node"
+                @closed="gns_node = false"
+            />
+            
             <div style="user-select:none;width:100%;height:100vh;overflow:auto;" ref="gns_canvas">
                 <div :style="{
                     width: project.scene_width + 'px',
@@ -29,10 +35,7 @@ Vue.component('gns_project', {
                                 width: link.length+'px'
                             }"
                             :title="LinkTooltip(link)"
-                            @click="action = {
-                                is: 'gns_link',
-                                data: link
-                            }"
+                            @click="gns_link = link"
                             class="link"
                             :class="link.type"
                         ></div>
@@ -47,12 +50,9 @@ Vue.component('gns_project', {
                             left: (project.scene_width/2)+node.x + 'px',
                             zIndex: 10
                         }"
-                        @click="action = {
-                            is: 'gns_node',
-                            data: node
-                        }"
+                        @click="gns_node = node"
                         :title="NodeTooltip(node)"
-                        style="position:absolute;"
+                        style="position:absolute;cursor:pointer;"
                         class="router"
                     >
                         <div :style="'position:absolute;top:'+node.label.y+'px;left:'+node.label.x+'px;'+node.label.style">
@@ -199,7 +199,6 @@ Vue.component('gns_project', {
             
             var str = '';
             for (const int in rc.interfaces) {
-                console.log(int);
                 if(/loopback/i.test(int)) {
                     str += 
                     int + '\n' +
@@ -241,72 +240,5 @@ Vue.component('gns_project', {
             this.$refs.gns_canvas.scrollLeft = (this.project.scene_width - this.$refs.gns_canvas.clientWidth)/2;
             this.$refs.gns_canvas.scrollTop = (this.project.scene_height - this.$refs.gns_canvas.clientHeight)/2;
         }, 0);
-    },
-    components: {
-        'gns_link': {
-            props: ['data'],
-            template: `
-            <div v-if="!is_running_config">
-            <h2> {{ link0.name }} </h2>
-            <pre>no running config...</pre>
-            <h2> {{ link1.name }} </h2>
-            <pre>no running config...</pre>
-            </div>
-            <div v-else>
-            <h2> {{ link0.name }} </h2>
-            <pre>{{ dev0 }}</pre>
-            <h2> {{ link1.name }} </h2>
-            <pre>{{ dev1 }}</pre>
-            </div>
-            `,
-            computed: {
-                is_running_config(){
-                    return this.$store.getters.is_running_config;
-                },
-                running_config() {
-                    return Object.keys(this.$store.state.configs.running_config).length == 0 ? null : this.$store.state.configs.running_config;
-                },
-                
-                link0() {
-                    return this.data.devices[0];
-                },
-                link1() {
-                    return this.data.devices[1];
-                },
-                
-                dev0() {
-                    return this.running_config[this.link0.name].interfaces[this.link0.port];
-                },
-                dev1() {
-                    return this.running_config[this.link1.name].interfaces[this.link1.port];
-                }
-            }
-        },
-        'gns_node': {
-            props: ['data'],
-            template: `
-            <div v-if="!is_running_config">
-            <h2> {{ data.name }} </h2>
-            <pre>{{ data.ports }}</pre>
-            </div>
-            <div v-else>
-            <pre>{{ config.router }}</pre>
-            </div>
-            `,
-            computed: {
-                is_running_config(){
-                    return this.$store.getters.is_running_config;
-                },
-                running_config() {
-                    return this.$store.state.configs.running_config;
-                },
-                
-                config() {
-                    return this.running_config[this.data.name];
-                },
-            },
-            mounted() {
-            }
-        }
     }
 })
