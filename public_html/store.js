@@ -1,5 +1,7 @@
 const store = new Vuex.Store({
     state: {
+        workspace: 'default',
+
         running: false,
 
         connection: {
@@ -41,6 +43,10 @@ const store = new Vuex.Store({
         }
     },
     mutations: {
+        SET_WORKSPACE(state, workspace = null) {
+            Vue.set(state, 'workspace', workspace || 'default')
+        },
+
         // GLOBAL
         RUNNING(state, running) {
             Vue.set(state, 'running', running)
