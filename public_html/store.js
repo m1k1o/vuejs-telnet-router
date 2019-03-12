@@ -153,8 +153,8 @@ const store = new Vuex.Store({
                 let node0 = link.nodes[0];
                 let node1 = link.nodes[1];
 
-                node_ports[node0.node_id+"_"+node0.adapter_number+"_"+node0.port_number] = nodes[node1.node_id]
-                node_ports[node1.node_id+"_"+node1.adapter_number+"_"+node1.port_number] = nodes[node0.node_id]
+                node_ports[node0.node_id+"_"+node0.adapter_number+"_"+node0.port_number] = { link, node: nodes[node1.node_id] }
+                node_ports[node1.node_id+"_"+node1.adapter_number+"_"+node1.port_number] = { link, node: nodes[node0.node_id] }
             }
 
             // NODES
@@ -169,7 +169,7 @@ const store = new Vuex.Store({
                     if(key in node_ports) {
                         links.push({
                             port,
-                            node: node_ports[key]
+                            ...node_ports[key]
                         })
                     }
                 }
