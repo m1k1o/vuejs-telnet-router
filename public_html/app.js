@@ -4,7 +4,8 @@ Vue.component('telnet-router', {
 	<div v-if="!running" id="telnet-router" class="py-2">
 		<connect />
 	</div>
-	<div v-else-if="workspace != 'default'" id="telnet-router" class="py-2">
+	<div v-else-if="workspace != 'default'" id="telnet-router" style="position: relative;">
+		<button style="position:absolute;left:0;top:0;z-index:100;" @click="$store.commit('SET_WORKSPACE')">&lt; Back</button>
 		<compnent :is="workspace" />
 	</div>
 	<div v-else id="telnet-router" class="container-fluid py-2">
