@@ -176,8 +176,8 @@ const store = new Vuex.Store({
                 
                 let configs = {};
                 for(const key in state.configs) {
-                    if (node.name in state.configs[key]) {
-                        configs[key] = state.configs[key][node.name]
+                    if (node.gns.name in state.configs[key]) {
+                        configs[key] = state.configs[key][node.gns.name]
                     }
                 }
                 

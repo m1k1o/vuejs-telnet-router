@@ -14,7 +14,9 @@ Vue.component('gns', {
                 <h1 class="card-title mb-0">GNS</h1>
             </div>
             <div class="card-body" v-if="project">
-                <button class="btn btn-light" @click="GnsProject()">View Project</button>
+                <button class="btn btn-light" @click="Workspace('gns_project')">View Project</button>
+                <button class="btn btn-light" @click="Workspace('eigrp')">EIGRP</button>
+                
                 <button class="btn btn-outline-light btn-sm float-right" @click="gns_interfaces = true">All Interfaces</button>
             </div>
             
@@ -30,8 +32,8 @@ Vue.component('gns', {
         </div>
     `,
     methods: {
-        GnsProject() {
-            this.$store.commit('SET_WORKSPACE', 'gns_project')
+        Workspace(name) {
+            this.$store.commit('SET_WORKSPACE', name)
         }
     },
 	computed: {
