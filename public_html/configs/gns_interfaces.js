@@ -1,4 +1,4 @@
-Vue.component('interfaces_old', {
+Vue.component('gns_interfaces', {
     props: ['opened'],
     watch: { 
         opened: function(newVal, oldVal) {

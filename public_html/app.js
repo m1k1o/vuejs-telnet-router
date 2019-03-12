@@ -17,23 +17,17 @@ Vue.component('telnet-router', {
 				<h1>Batch</h1>
 				<textarea class="batch" v-model="batch" rows="5"></textarea>
 				<div class="mb-2">
-					<button @click="SendBatch()">Send to All</button>
+					<button class="btn btn-light" @click="SendBatch()">Send to All</button>
 				</div>
 				
 				<gns />
 				
-				<button @click="gui.interfaces_old = true">Interfaces (old)</button>
-				<button @click="gui.interfaces = true" :disabled="!is_running_config">Interfaces</button> <span v-if="!is_running_config">Needs running config...</span>
+				<button class="btn btn-light" @click="gui.interfaces = true" :disabled="!is_running_config">Interfaces</button> <span v-if="!is_running_config">Needs running config...</span>
 			</div>
 			<div class="col-6">
 				<terminal />
 			</div>
 		</div>
-
-		<interfaces_old
-			:opened="gui.interfaces_old"
-			@closed="gui.interfaces_old = false"
-		></interfaces_old>
 		
 		<interfaces
 			:opened="gui.interfaces"
@@ -43,7 +37,6 @@ Vue.component('telnet-router', {
 	`,
     data: () => ({
 		gui: {
-			interfaces_old: false,
 			interfaces: false
 		},
         batch: ''

@@ -1,6 +1,7 @@
 Vue.component('gns', {
     data: () => ({
-        connect_modal: false
+        connect_modal: false,
+        gns_interfaces: false
     }),
     template: `
         <div class="card bg-dark mb-3">
@@ -13,13 +14,19 @@ Vue.component('gns', {
                 <h1 class="card-title mb-0">GNS</h1>
             </div>
             <div class="card-body" v-if="project">
-                <button @click="GnsProject()">View Project</button>
+                <button class="btn btn-light" @click="GnsProject()">View Project</button>
+                <button class="btn btn-outline-light btn-sm float-right" @click="gns_interfaces = true">All Interfaces</button>
             </div>
             
             <connect_modal
                 :opened="connect_modal"
                 @closed="connect_modal = false"
             />
+
+            <gns_interfaces
+                :opened="gns_interfaces"
+                @closed="gns_interfaces = false"
+            ></gns_interfaces>
         </div>
     `,
     methods: {
