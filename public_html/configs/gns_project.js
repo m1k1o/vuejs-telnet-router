@@ -1,85 +1,67 @@
 Vue.component('gns_project', {
-    props: ['opened'],
-    watch: { 
-        opened: function(newVal, oldVal) {
-            if(!oldVal && newVal) {
-                this.Open();
-            }
-            
-            if(oldVal && !newVal) {
-                this.Close();
-            }
-        }
-    },
     data: () => ({
-        visible: false,
         action: false
     }),
     template: `
-        <modal v-if="visible" v-on:close="Close()" style="color:black;" :full_width="true">
-            <div slot="header">
-                <h1 class="mb-3"> GNS Project </h1>
+        <div class="form-horizontal bg-white text-dark">
+            <div style="position:absolute;z-index:20;background:white;max-height:100vh;overflow:auto;">
+                <button v-if="action" @click="action = false">CLOSE</button>
+                <component v-if="action" :data="action.data" :is="action.is" />
             </div>
-            <div slot="body" class="form-horizontal">
-                <div style="position:absolute;z-index:20;background:white;max-height:100%;overflow:auto;">
-                    <button v-if="action" @click="action = false">CLOSE</button>
-                    <component v-if="action" :data="action.data" :is="action.is" />
-                </div>
 
-                <div style="user-select:none;width:100%;height:100%;max-height: calc(100vh - 202px);overflow:auto;" ref="gns_canvas">
-                    <div :style="{
-                        width: project.scene_width + 'px',
-                        height: project.scene_height + 'px',
-                    }" style="position:relative;">
-                        <template v-for="link in links">
-                            <template v-for="label in link.labels" v-if="project.show_interface_labels">
-                                <div :style="'position:absolute;top:'+label.y+'px;left:'+label.x+'px;'+label.style">
-                                    {{ label.text }}
-                                </div>
-                            </template>
-                            
-                            <div
-                                :style="{
-                                    transform: 'rotate('+link.angle+'rad) translateY(-50%)',
-                                    top: link.y+'px',
-                                    left: link.x+'px',
-                                    width: link.length+'px'
-                                }"
-                                :title="LinkTooltip(link)"
-                                @click="action = {
-                                    is: 'gns_link',
-                                    data: link
-                                }"
-                                class="link"
-                                :class="link.type"
-                            ></div>
+            <div style="user-select:none;width:100%;height:100vh;overflow:auto;" ref="gns_canvas">
+                <div :style="{
+                    width: project.scene_width + 'px',
+                    height: project.scene_height + 'px',
+                }" style="position:relative;">
+                    <template v-for="link in links">
+                        <template v-for="label in link.labels" v-if="project.show_interface_labels">
+                            <div :style="'position:absolute;top:'+label.y+'px;left:'+label.x+'px;'+label.style">
+                                {{ label.text }}
+                            </div>
                         </template>
                         
                         <div
-                            v-for="node in nodes"
                             :style="{
-                                width: node.width + 'px',
-                                height: node.height + 'px',
-                                top: (project.scene_height/2)+node.y + 'px',
-                                left: (project.scene_width/2)+node.x + 'px',
-                                zIndex: 10
+                                transform: 'rotate('+link.angle+'rad) translateY(-50%)',
+                                top: link.y+'px',
+                                left: link.x+'px',
+                                width: link.length+'px'
                             }"
+                            :title="LinkTooltip(link)"
                             @click="action = {
-                                is: 'gns_node',
-                                data: node
+                                is: 'gns_link',
+                                data: link
                             }"
-                            :title="NodeTooltip(node)"
-                            style="position:absolute;"
-                            class="router"
-                        >
-                            <div :style="'position:absolute;top:'+node.label.y+'px;left:'+node.label.x+'px;'+node.label.style">
-                                {{ node.label.text }}
-                            </div>
+                            class="link"
+                            :class="link.type"
+                        ></div>
+                    </template>
+                    
+                    <div
+                        v-for="node in nodes"
+                        :style="{
+                            width: node.width + 'px',
+                            height: node.height + 'px',
+                            top: (project.scene_height/2)+node.y + 'px',
+                            left: (project.scene_width/2)+node.x + 'px',
+                            zIndex: 10
+                        }"
+                        @click="action = {
+                            is: 'gns_node',
+                            data: node
+                        }"
+                        :title="NodeTooltip(node)"
+                        style="position:absolute;"
+                        class="router"
+                    >
+                        <div :style="'position:absolute;top:'+node.label.y+'px;left:'+node.label.x+'px;'+node.label.style">
+                            {{ node.label.text }}
                         </div>
                     </div>
                 </div>
             </div>
-        </modal>
+        </div>
     `,
     computed: {
         is_running_config(){
@@ -175,19 +157,6 @@ Vue.component('gns_project', {
         },
     },
     methods: {
-        Open(){
-            document.body.style.overflow = "hidden";
-            this.visible = true;
-            setTimeout(() => {
-                this.$refs.gns_canvas.scrollLeft = (this.project.scene_width - this.$refs.gns_canvas.clientWidth)/2;
-                this.$refs.gns_canvas.scrollTop = (this.project.scene_height - this.$refs.gns_canvas.clientHeight)/2;
-            }, 0)
-        },
-        Close(){
-            document.body.style.overflow = "auto";
-            this.visible = false;
-            this.$emit("closed");
-        },
         getAngleLength({x0, y0, x, y}) {
             let length = Math.sqrt(Math.pow(y - y0, 2) + Math.pow(x - x0, 2));
             let angle = Math.asin((y - y0) / length);
@@ -266,6 +235,12 @@ Vue.component('gns_project', {
             return str +
             'Router: ' + Object.keys(router).join(", ");
         }
+    },
+    mounted() {
+        setTimeout(() => {
+            this.$refs.gns_canvas.scrollLeft = (this.project.scene_width - this.$refs.gns_canvas.clientWidth)/2;
+            this.$refs.gns_canvas.scrollTop = (this.project.scene_height - this.$refs.gns_canvas.clientHeight)/2;
+        }, 0);
     },
     components: {
         'gns_link': {
