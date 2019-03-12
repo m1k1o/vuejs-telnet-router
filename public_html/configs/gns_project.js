@@ -77,98 +77,10 @@ Vue.component('gns_project', {
             return this.$store.state.gns.project_nodes;
         },
         links() {
-            // DEVICES & PORTS
-            var node_ports = {};
-            for(var node of this.nodes) {
-                node_ports[node.node_id] = {};
-                for (const port of node.ports) {
-                    node_ports[node.node_id][port.adapter_number + "_" + port.port_number] =  {
-                        port: port.name,
-                        device: node.name,
-                        link_type: port.link_type,
-                        
-                        x: node.x,
-                        y: node.y,
-                        
-                        width: node.width,
-                        height: node.height
-                    };
-                }
-            }
-            
-            // LINKS
-            var links = [];
-            for(var link of this.$store.state.gns.project_links) {
-                var nodes = link.nodes.map(node => {
-                    return {
-                        label: node.label,
-                        ...node_ports[node.node_id][node.adapter_number + "_" + node.port_number]
-                    }
-                })
-                
-                var x = (this.project.scene_width/2);
-                var y = (this.project.scene_height/2);
-                
-                var line = {
-                    x0: x + nodes[0].x + (nodes[0].width/2),
-                    y0: y + nodes[0].y + (nodes[0].height/2),
-                    x: x + nodes[1].x + (nodes[1].width/2),
-                    y: y + nodes[1].y + (nodes[1].height/2),
-                }
-                
-                let { angle, length } = this.getAngleLength(line);
-                
-                links.push({
-                    x: line.x0,
-                    y: line.y0,
-                    angle,
-                    length,
-                    labels: [
-                        {
-                            rotation: nodes[0].label.rotation,
-                            style: nodes[0].label.style,
-                            text: nodes[0].label.text,
-                            x: x + nodes[0].x + nodes[0].label.x,
-                            y: y + nodes[0].y + nodes[0].label.y
-                        },
-                        {
-                            rotation: nodes[1].label.rotation,
-                            style: nodes[1].label.style,
-                            text: nodes[1].label.text,
-                            x: x + nodes[1].x + nodes[1].label.x,
-                            y: y + nodes[1].y + nodes[1].label.y
-                        }
-                    ],
-                    devices: [
-                        {
-                            name: nodes[0].device,
-                            port: nodes[0].port
-                        },
-                        {
-                            name: nodes[1].device,
-                            port: nodes[1].port
-                        }
-                    ],
-                    type: nodes[0].link_type
-                });
-            }
-            
-            return links;
+            return this.$store.getters.gns_links;
         },
     },
     methods: {
-        getAngleLength({x0, y0, x, y}) {
-            let length = Math.sqrt(Math.pow(y - y0, 2) + Math.pow(x - x0, 2));
-            let angle = Math.asin((y - y0) / length);
-            
-            if(y0 > y) {
-                x0 < x || (angle =  Math.acos((y - y0) / length) + Math.PI/2);
-            } else {
-                x0 < x || (angle = Math.acos((y - y0) / length) + Math.PI/2);
-            }
-            
-            return { length, angle };
-        },
         LinkTooltip(link) {
             var running_config = this.running_config;
             if(!this.is_running_config) {
