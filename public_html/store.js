@@ -273,6 +273,7 @@ const store = new Vuex.Store({
                             port: nodes[1].port
                         }
                     ],
+                    link_id: link.link_id,
                     type: nodes[0].link_type
                 });
             }

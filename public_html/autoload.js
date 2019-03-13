@@ -24,6 +24,7 @@ async function vuejs_telnet_router(Initialize, base_path = "") {
         
         'components/interfaces.js',
 
+        'configs/gns_canvas.js',
         'configs/gns_interfaces.js',
         'configs/gns_project.js',
         'configs/gns_link.js',
