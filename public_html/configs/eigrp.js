@@ -6,12 +6,33 @@ Vue.component('eigrp', {
         <div class="form-horizontal bg-white text-dark" style="width:100%;height:100vh;padding:2em;">
             <h1>Eigrp</h1>
             <div class="alert" v-for="{msg, type} in logs" :class="'alert-'+(type || 'info')">{{msg}}</div>
+
+            <gns_canvas_project style="position:absolute;top:0;left:0;right:0;">
+                <gns_canvas_link
+                    v-for="link in links"
+                    :link="link"
+                    :key="link.link_id"
+                />
+                
+                <gns_canvas_node
+                    v-for="node in nodes"
+                    :node="node"
+                    :key="node.node_id"
+                />
+            </gns_canvas_project>
         </div>
     `,
     computed: {
         gns_nodes() {
             return this.$store.getters.gns_nodes;
-        }
+        },
+        
+        nodes() {
+            return this.$store.state.gns.project_nodes;
+        },
+        links() {
+            return this.$store.getters.gns_links;
+        },
     },
     methods: {
         
