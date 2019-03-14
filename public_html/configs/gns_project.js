@@ -22,7 +22,7 @@ Vue.component('gns_project', {
                     :key="link.link_id"
 
                     :title="LinkTooltip(link)"
-                    @click="gns_link = link"
+                    @click.native="gns_link = link"
                 />
                 
                 <gns_canvas_node
@@ -30,7 +30,7 @@ Vue.component('gns_project', {
                     :node="node"
                     :key="node.node_id"
 
-                    @click="gns_node = node"
+                    @click.native="gns_node = node"
                     :title="NodeTooltip(node)"
                 />
             </gns_canvas_project>
