@@ -31,6 +31,7 @@ async function vuejs_telnet_router(Initialize, base_path = "") {
         'configs/gns_node.js',
 
         'configs/eigrp.js',
+        'configs/lists.js',
         
         'store.js',
         'app.js'

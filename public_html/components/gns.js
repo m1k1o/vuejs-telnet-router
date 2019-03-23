@@ -16,6 +16,7 @@ Vue.component('gns', {
             <div class="card-body" v-if="project">
                 <button class="btn btn-light" @click="Workspace('gns_project')">View Project</button>
                 <button class="btn btn-light" @click="Workspace('eigrp')">EIGRP</button>
+                <button class="btn btn-light" @click="Workspace('lists')">LISTS</button>
                 
                 <button class="btn btn-outline-light btn-sm float-right" @click="gns_interfaces = true">All Interfaces</button>
             </div>
