@@ -2,10 +2,21 @@ Vue.component('gns_project', {
     data: () => ({
         gns_link: false,
         gns_node: false,
-        action: false
+        action: false,
+        routing_protocol: ""
     }),
     template: `
         <div class="form-horizontal bg-white text-dark">
+            <div class="text-center">
+                Highlight Protocol: <select v-model="routing_protocol">
+                    <option value="">--none--</option>
+                    <option>eigrp</option>
+                    <option>rip</option>
+                    <option>ospf</option>
+                    <option>bgp</option>
+                </select>
+            </div>
+
             <gns_link
                 :opened="gns_link"
                 @closed="gns_link = false"
@@ -22,15 +33,16 @@ Vue.component('gns_project', {
                     :key="link.link_id"
 
                     :title="LinkTooltip(link)"
-                    @click.native="gns_link = link"
+                    @click="gns_link = link"
                 />
                 
                 <gns_canvas_node
                     v-for="node in nodes"
                     :node="node"
                     :key="node.node_id"
+                    :gray="gray_filter[node.node_id]"
 
-                    @click.native="gns_node = node"
+                    @click="gns_node = node"
                     :title="NodeTooltip(node)"
                 />
             </gns_canvas_project>
@@ -52,6 +64,18 @@ Vue.component('gns_project', {
         links() {
             return this.$store.getters.gns_links;
         },
+        gray_filter() {
+            let gray = {};
+            for (const node of this.nodes) {
+                if(!this.routing_protocol) {
+                    gray[node.node_id] = false
+                    continue
+                }
+                
+                gray[node.node_id] = !(this.routing_protocol in this.running_config[node.name].router)
+            }
+            return gray
+        }
     },
     methods: {
         LinkTooltip(link) {

@@ -40,19 +40,9 @@ Vue.component('gns_canvas_project', {
 })
 
 Vue.component('gns_canvas_node', {
-    props: ['node'],
+    props: ['node', 'gray'],
     template: `
-        <div
-            :style="{
-                width: node.width + 'px',
-                height: node.height + 'px',
-                top: (project.scene_height/2)+node.y + 'px',
-                left: (project.scene_width/2)+node.x + 'px',
-                zIndex: 10
-            }"
-            style="position:absolute;cursor:pointer;"
-            class="router"
-        >
+        <div v-on="$listeners" v-bind="attrs">
             <div :style="'position:absolute;top:'+node.label.y+'px;left:'+node.label.x+'px;'+node.label.style">
                 {{ node.label.text }}
             </div>
@@ -61,22 +51,43 @@ Vue.component('gns_canvas_node', {
     computed: {
         project() {
             return this.$store.state.gns.project;
+        },
+        attrs() {
+            return {
+                ...this.$attrs,
+                style: {
+                    ...(this.$attrs.style || {}),
+                    position: 'absolute',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    filter: this.gray ? 'grayscale(1)' : '',
+                    width: this.node.width + 'px',
+                    height: this.node.height + 'px',
+                    top: (this.project.scene_height/2)+this.node.y + 'px',
+                    left: (this.project.scene_width/2)+this.node.x + 'px'
+                },
+                class: (this.$attrs.class || '') + " router "//+this.node.type
+            }
         }
     }
 })
 
 Vue.component('gns_canvas_link', {
     props: ['link'],
-    template: `
-        <div
-            :style="{
-                transform: 'rotate('+link.angle+'rad) translateY(-50%)',
-                top: link.y+'px',
-                left: link.x+'px',
-                width: link.length+'px'
-            }"
-            class="link"
-            :class="link.type"
-        ></div>
-    `
+    template: `<div v-on="$listeners" v-bind="attrs"></div>`,
+    computed: {
+        attrs() {
+            return {
+                ...this.$attrs,
+                style: {
+                    ...(this.$attrs.style || {}),
+                    transform: 'rotate('+this.link.angle+'rad) translateY(-50%)',
+                    top: this.link.y+'px',
+                    left: this.link.x+'px',
+                    width: this.link.length+'px'
+                },
+                class: (this.$attrs.class || '') + " link "+this.link.type
+            }
+        }
+    }
 })

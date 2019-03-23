@@ -16,6 +16,7 @@ Vue.component('eigrp', {
                 
                 <gns_canvas_node
                     v-for="node in nodes"
+                    :gray="!('eigrp' in gns_nodes[node.node_id].configs.running_config.router)"
                     :node="node"
                     :key="node.node_id"
                 />
