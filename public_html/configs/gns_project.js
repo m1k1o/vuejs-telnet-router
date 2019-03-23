@@ -10,10 +10,16 @@ Vue.component('gns_project', {
             <div class="text-center">
                 Highlight Protocol: <select v-model="routing_protocol">
                     <option value="">--none--</option>
-                    <option>eigrp</option>
-                    <option>rip</option>
-                    <option>ospf</option>
-                    <option>bgp</option>
+                    <option value="bgp"> Border Gateway Protocol (BGP)</option>
+                    <option value="eigrp"> Enhanced Interior Gateway Routing Protocol (EIGRP)</option>
+                    <!--
+                        <option value="isis"> ISO IS-IS</option>
+                        <option value="iso-igrp"> IGRP for OSI networks</option>
+                        <option value="mobile"> Mobile routes</option>
+                        <option value="odr"> On Demand stub Routes</option>
+                    -->
+                    <option value="ospf"> Open Shortest Path First (OSPF)</option>
+                    <option value="rip"> Routing Information Protocol (RIP)</option>
                 </select>
             </div>
 
