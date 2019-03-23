@@ -100,7 +100,7 @@ module.exports = function(io) {
             // Remove
             all_saved.splice(all_saved.indexOf(name), 1);
 
-            if(saved.host != host || saved.port != port) {
+            if(saved.host != host || saved.port != port || saved.status != 'ready') {
                 await this.remove(name)
                 this.add(name, host, port);
             }
