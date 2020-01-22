@@ -5,7 +5,7 @@ const store = new Vuex.Store({
         running: false,
 
         connection: {
-            url: "ws://127.0.0.1:8090",
+            url: "ws://",
             socket: null,
             auto: false
         },

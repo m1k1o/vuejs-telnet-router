@@ -128,22 +128,25 @@ http.on('request', async (req, res) => {
         return ;
     }
 
-    // Simple HTTP server
+    // Hande index
     var file = req.url;
     if(file == '/') {
         file = '/index.html';
     }
 
-    fs.readFile(__dirname + '/public_html' + file, function (err,data) {
-        if (err) {
-            res.writeHead(404);
-            res.end(JSON.stringify(err));
-            return;
-        }
+    // Simple HTTP server
+    if(/\.(js|svg|css|html)$/.test(file)) {
+        fs.readFile(__dirname + '/public_html' + file, function (err,data) {
+            if (err) {
+                res.writeHead(404);
+                res.end(JSON.stringify(err));
+                return;
+            }
 
-        res.writeHead(200);
-        res.end(data);
-    });
+            res.writeHead(200);
+            res.end(data);
+        });
+    }
 });
 
 
