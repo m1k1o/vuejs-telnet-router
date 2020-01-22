@@ -2,6 +2,7 @@
 
 var axios = require('axios');
 var url = require('url');
+var fs = require('fs');
 
 var port = process.argv[2] || 8090;
 var http = require("http").createServer();
@@ -126,6 +127,23 @@ http.on('request', async (req, res) => {
         }
         return ;
     }
+
+    // Simple HTTP server
+    var file = req.url;
+    if(file == '/') {
+        file = '/index.html';
+    }
+
+    fs.readFile(__dirname + '/public_html' + file, function (err,data) {
+        if (err) {
+            res.writeHead(404);
+            res.end(JSON.stringify(err));
+            return;
+        }
+
+        res.writeHead(200);
+        res.end(data);
+    });
 });
 
 
