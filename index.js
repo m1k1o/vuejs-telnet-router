@@ -15,6 +15,9 @@ http.listen(port, function () {
 });
 
 http.on('request', async (req, res) => {
+    // Ignore socket.io messages
+    if(/^\/socket.io/.test(req.url)) return
+
     let m;
 
     // Set CORS headers

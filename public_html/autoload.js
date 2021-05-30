@@ -14,7 +14,7 @@ async function vuejs_telnet_router(Initialize, base_path = "") {
     var resources = [
         'libs/vue.js',
         'libs/vuex.js',
-        'libs/socket.io.js',
+        'socket.io/socket.io.js',
     
         'components/modal.js',
         'components/connect.js',
